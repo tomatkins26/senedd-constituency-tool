@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Senedd Constituency Finder - Mobile</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #006473;
+      color: #fff;
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      max-width: 300px;
+      padding: 1rem;
+      font-size: 1.2rem;
+      border-radius: 10px;
+      border: none;
+      margin-bottom: 1rem;
+    }
+
+    button {
+      background-color: #004a56;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 1rem 1.5rem;
+      font-size: 1.2rem;
+      width: 100%;
+      max-width: 300px;
+      cursor: pointer;
+    }
+
+    #result {
+      margin-top: 1.5rem;
+      font-size: 1.2rem;
+      font-weight: bold;
+      text-align: center;
+      min-height: 3rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Find Your 2026 Senedd Constituency</h1>
+  <form id="lookup-form">
+    <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
+    <button type="submit">Look up</button>
+  </form>
+
+  <div id="result"></div>
+
+  <script>
+    const form = document.getElementById('lookup-form');
+    const resultDiv = document.getElementById('result');
+
+    let boundaries = null;
+
+    fetch('senedd2026.json')
+      .then(res => res.json())
+      .then(data => { boundaries = data; })
+      .catch(() => { resultDiv.textContent = "Error loading constituency data." });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const postcode = document.getElementById('postcode').value.trim();
+      resultDiv.textContent = "Looking up...";
+
+      try {
+        const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
+        const data = await res.json();
+
+        if (!data.result) throw new Error("Invalid postcode");
+
+        const { longitude, latitude, country } = data.result;
+        if (country !== "Wales") {
+          resultDiv.textContent = "This tool only supports Welsh postcodes.";
+          return;
+        }
+
+        const point = [longitude, latitude];
+        const match = boundaries.features.find(f =>
+          inside(point, f.geometry.coordinates[0][0])
+        );
+
+        if (match) {
+          resultDiv.innerHTML = `Your 2026 Senedd constituency is:<br><strong>${match.properties.enw_cymrae}</strong>`;
+        } else {
+          resultDiv.textContent = "Could not find your constituency.";
+        }
+      } catch {
+        resultDiv.textContent = "Something went wrong. Please try again.";
+      }
+    });
+
+    function inside(point, vs) {
+      const x = point[0], y = point[1];
+      let inside = false;
+      for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        const xi = vs[i][0], yi = vs[i][1];
+        const xj = vs[j][0], yj = vs[j][1];
+        const intersect = ((yi > y) !== (yj > y)) &&
+          (x < (xj - xi) * (y - yi) / ((yj - yi) + 0.00001) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+  </script>
+</body>
+</html>
