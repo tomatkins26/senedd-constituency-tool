@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Find Your 2026 Senedd Constituency</title>
   <style>
     body {
-      font-family: 'Source Sans Pro', sans-serif;
-      background-color: #ebf7f5;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f8f8f8;
       color: #000;
       display: flex;
       justify-content: center;
@@ -100,7 +100,7 @@
     <h2>Find Your 2026 Senedd Constituency</h2>
     <form id="lookup-form">
       <label for="postcode">Enter your postcode:</label>
-      <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required>
+      <input type="text" id="postcode" placeholder="e.g. CF10 1EP" required />
       <button type="submit">Look up</button>
     </form>
 
@@ -120,9 +120,11 @@
     let boundaries = null;
 
     fetch('senedd2026.json')
-      .then(res => res.json())
-      .then(data => { boundaries = data; })
-      .catch(err => resultDiv.innerText = "Error loading constituency data.");
+      .then((res) => res.json())
+      .then((data) => {
+        boundaries = data;
+      })
+      .catch((err) => (resultDiv.innerText = 'Error loading constituency data.'));
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -134,55 +136,71 @@
       progressBar.style.width = '100%';
 
       try {
-        const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
+        const res = await fetch(
+          `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`
+        );
         const data = await res.json();
-        if (!data.result) throw new Error("Invalid postcode");
+        if (!data.result) throw new Error('Invalid postcode');
         const { longitude, latitude, country } = data.result;
 
-        if (country !== "Wales") {
+        if (country !== 'Wales') {
           setTimeout(() => {
             progressContainer.style.display = 'none';
-            resultDiv.innerText = "This tool only supports Welsh postcodes.";
+            resultDiv.innerText = 'This tool only supports Welsh postcodes.';
           }, 2500);
           return;
         }
 
         const point = [longitude, latitude];
-        const match = boundaries.features.find(f =>
-          inside(point, f.geometry.coordinates[0][0])
-        );
+        // Check polygons or multipolygons properly
+        const match = boundaries.features.find((feature) => {
+          const geom = feature.geometry;
+          if (geom.type === 'Polygon') {
+            // Polygon: coordinates is an array of linear rings, take first ring [0]
+            return inside(point, geom.coordinates[0]);
+          } else if (geom.type === 'MultiPolygon') {
+            // MultiPolygon: coordinates is array of polygons, each polygon is array of rings
+            return geom.coordinates.some(
+              (polygon) => inside(point, polygon[0])
+            );
+          }
+          return false;
+        });
 
         setTimeout(() => {
           progressContainer.style.display = 'none';
           if (match) {
             resultDiv.innerHTML = `Your 2026 Senedd constituency is: <span class="const-name">${match.properties.enw_cymrae}</span>`;
           } else {
-            resultDiv.innerText = "Could not find your constituency.";
+            resultDiv.innerText = 'Could not find your constituency.';
           }
         }, 2500);
       } catch (err) {
         console.error(err);
         setTimeout(() => {
           progressContainer.style.display = 'none';
-          resultDiv.innerText = "Something went wrong. Please try again.";
+          resultDiv.innerText = 'Something went wrong. Please try again.';
         }, 2500);
       }
     });
 
     function inside(point, vs) {
-      const x = point[0], y = point[1];
+      const x = point[0],
+        y = point[1];
       let inside = false;
       for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-        const xi = vs[i][0], yi = vs[i][1];
-        const xj = vs[j][0], yj = vs[j][1];
+        const xi = vs[i][0],
+          yi = vs[i][1];
+        const xj = vs[j][0],
+          yj = vs[j][1];
 
-        const intersect = ((yi > y) !== (yj > y)) &&
-          (x < (xj - xi) * (y - yi) / ((yj - yi) + 0.00001) + xi);
+        const intersect =
+          (yi > y) !== (yj > y) &&
+          x < ((xj - xi) * (y - yi)) / (yj - yi + 0.00001) + xi;
         if (intersect) inside = !inside;
       }
       return inside;
     }
   </script>
 </body>
-</html>
 </html>
