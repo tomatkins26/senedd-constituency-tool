@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Find Your 2026 Senedd Constituency</title>
   <style>
     body {
@@ -34,7 +34,7 @@
   <h2>Find Your 2026 Senedd Constituency</h2>
   <form id="lookup-form">
     <label for="postcode">Enter your postcode:</label>
-    <input type="text" id="postcode" placeholder="e.g. CF10 1EP" required>
+    <input type="text" id="postcode" placeholder="e.g. CF10 1EP" required />
     <button type="submit">Look up</button>
   </form>
   <div id="result"></div>
@@ -44,21 +44,64 @@
     const resultDiv = document.getElementById('result');
     let boundaries = null;
 
-    // Load GeoJSON
+    // Load GeoJSON constituency boundaries
     fetch('senedd2026.json')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load constituency data');
+        return res.json();
+      })
       .then(data => { boundaries = data; })
-      .catch(err => resultDiv.innerText = "Error loading constituency data.");
+      .catch(err => {
+        console.error(err);
+        resultDiv.innerText = "Error loading constituency data.";
+        form.querySelector('button').disabled = true;
+      });
+
+    // Point-in-polygon function for a single ring
+    function inside(point, vs) {
+      const x = point[0], y = point[1];
+      let inside = false;
+      for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        const xi = vs[i][0], yi = vs[i][1];
+        const xj = vs[j][0], yj = vs[j][1];
+
+        const intersect = ((yi > y) !== (yj > y)) &&
+          (x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-10) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+
+    // Check point inside Polygon (only outer ring)
+    function pointInPolygon(point, polygonCoords) {
+      // polygonCoords = array of linear rings (outer + holes)
+      // We check only outer ring (polygonCoords[0])
+      return inside(point, polygonCoords[0]);
+    }
+
+    // Check point inside any Polygon in MultiPolygon
+    function pointInMultiPolygon(point, multiPolygonCoords) {
+      return multiPolygonCoords.some(polygonCoords => pointInPolygon(point, polygonCoords));
+    }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const postcode = document.getElementById('postcode').value.trim();
+
+      if (!boundaries) {
+        resultDiv.innerText = "Constituency data not loaded yet.";
+        return;
+      }
+
       resultDiv.innerText = 'Looking up...';
 
       try {
+        // Fetch postcode location
         const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
         const data = await res.json();
+
         if (!data.result) throw new Error("Invalid postcode");
+
         const { longitude, latitude, country } = data.result;
 
         if (country !== "Wales") {
@@ -68,12 +111,20 @@
 
         const point = [longitude, latitude];
 
-        const match = boundaries.features.find(f =>
-          inside(point, f.geometry.coordinates[0][0])
-        );
+        // Find matching constituency polygon
+        const match = boundaries.features.find(f => {
+          if (!f.geometry) return false;
+          if (f.geometry.type === "Polygon") {
+            return pointInPolygon(point, f.geometry.coordinates);
+          }
+          if (f.geometry.type === "MultiPolygon") {
+            return pointInMultiPolygon(point, f.geometry.coordinates);
+          }
+          return false;
+        });
 
         if (match) {
-        resultDiv.innerText = `Your 2026 Senedd constituency is: ${match.properties.enw_cymrae}`;
+          resultDiv.innerText = `Your 2026 Senedd constituency is: ${match.properties.enw_cymrae}`;
         } else {
           resultDiv.innerText = "Could not find your constituency.";
         }
@@ -82,21 +133,6 @@
         resultDiv.innerText = "Something went wrong. Please try again.";
       }
     });
-
-    // Point-in-polygon function
-    function inside(point, vs) {
-      const x = point[0], y = point[1];
-      let inside = false;
-      for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-        const xi = vs[i][0], yi = vs[i][1];
-        const xj = vs[j][0], yj = vs[j][1];
-
-        const intersect = ((yi > y) !== (yj > y)) &&
-          (x < (xj - xi) * (y - yi) / (yj - yi + 0.00001) + xi);
-        if (intersect) inside = !inside;
-      }
-      return inside;
-    }
   </script>
 </body>
 </html>
