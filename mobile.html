@@ -1,146 +1,215 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Senedd Constituency Finder - Mobile</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Find Your 2026 Senedd Constituency</title>
+<style>
+  /* Base body and container */
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f8f8f8;
+    color: #28394E;
+    margin: 0;
+    padding: 2rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    box-sizing: border-box;
+    font-size: 14px;
+  }
+
+  .container {
+    background: white;
+    border-radius: 12px;
+    max-width: 320px;
+    width: 100%;
+    padding: 1.5rem 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    text-align: center;
+  }
+
+  /* Header */
+  h1 {
+    font-size: 1.6rem;
+    color: #006473;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+  }
+
+  /* Form Elements */
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #28394E;
+    text-align: left;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 0.85rem;
+    font-size: 1rem;
+    border-radius: 12px;
+    border: 1px solid #ccc;
+    margin-bottom: 1.25rem;
+    box-sizing: border-box;
+    color: #28394E;
+  }
+
+  button {
+    background-color: #006473;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.85rem;
+    font-size: 1rem;
+    width: 100%;
+    cursor: pointer;
+    transition: opacity 0.3s;
+    font-weight: 600;
+  }
+
+  button:hover {
+    opacity: 0.85;
+  }
+
+  /* Result text */
+  #result {
+    margin-top: 1.75rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+    min-height: 3rem;
+    color: #28394E;
+  }
+
+  .const-name {
+    color: #006473;
+  }
+
+  /* Progress bar styling */
+  .progress-container {
+    height: 6px;
+    background-color: #ddd;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 1rem;
+    display: none;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background-color: #006473;
+    width: 0%;
+    transition: width 2.5s linear;
+  }
+
+  /* Responsive tweaks */
+  @media (min-width: 600px) {
+    /* For tablets and up, keep layout simple and centered */
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #e5eff1;
-      color: #28394E;
-      margin: 0;
-      padding: 2rem 1rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      box-sizing: border-box;
+      font-size: 16px; /* slightly bigger for bigger screens */
     }
 
     .container {
-      background: white;
-      border-radius: 12px;
-      max-width: 320px; /* thinner */
-      width: 100%;
-      padding: 1.5rem 1rem; /* less padding */
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      text-align: center;
+      max-width: 400px;
+      padding: 2rem;
     }
 
     h1 {
-      font-size: 1.75rem;
-      color: #006473;
-      margin-bottom: 1.5rem;
-      font-weight: 600;
+      font-size: 2rem;
     }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 1rem;
-      font-size: 1.15rem;
-      border-radius: 12px;
-      border: 1px solid #ccc;
-      margin-bottom: 1.25rem;
-      box-sizing: border-box;
-      color: #28394E;
-    }
-
-    button {
-      background-color: #006473;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      padding: 1rem;
-      font-size: 1.15rem;
-      width: 100%;
-      cursor: pointer;
-      transition: opacity 0.3s;
-      font-weight: 600;
-    }
-
-    button:hover {
-      opacity: 0.85;
-    }
-
-    #result {
-      margin-top: 1.75rem;
-      font-size: 1.25rem;
-      font-weight: bold;
-      min-height: 3rem;
-      color: #28394E;
-    }
-
-    .const-name {
-      color: #006473;
-    }
-  </style>
+  }
+</style>
 </head>
 <body>
-  <div class="container">
+  <div class="container" role="main">
     <h1>Find Your 2026 Senedd Constituency</h1>
     <form id="lookup-form">
-      <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
+      <label for="postcode">Enter your postcode:</label>
+      <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required aria-describedby="postcodeHelp" />
       <button type="submit">Look up</button>
     </form>
-    <div id="result"></div>
+
+    <div class="progress-container" id="progress-container" aria-hidden="true">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div id="result" aria-live="polite" role="region"></div>
   </div>
 
-  <script>
-    const form = document.getElementById('lookup-form');
-    const resultDiv = document.getElementById('result');
+<script>
+  const form = document.getElementById('lookup-form');
+  const resultDiv = document.getElementById('result');
+  const progressContainer = document.getElementById('progress-container');
+  const progressBar = document.getElementById('progress-bar');
 
-    let boundaries = null;
+  let boundaries = null;
 
-    fetch('senedd2026.json')
-      .then(res => res.json())
-      .then(data => { boundaries = data; })
-      .catch(() => { resultDiv.textContent = "Error loading constituency data." });
+  fetch('senedd2026.json')
+    .then(res => res.json())
+    .then(data => { boundaries = data; })
+    .catch(() => { resultDiv.innerText = "Error loading constituency data."; });
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const postcode = document.getElementById('postcode').value.trim();
-      resultDiv.textContent = "Looking up...";
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const postcode = document.getElementById('postcode').value.trim();
+    resultDiv.innerText = '';
+    progressBar.style.width = '0%';
+    progressContainer.style.display = 'block';
+    progressBar.offsetHeight; // force reflow
+    progressBar.style.width = '100%';
 
-      try {
-        const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
-        const data = await res.json();
+    try {
+      const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
+      const data = await res.json();
+      if (!data.result) throw new Error("Invalid postcode");
+      const { longitude, latitude, country } = data.result;
 
-        if (!data.result) throw new Error("Invalid postcode");
+      if (country !== "Wales") {
+        setTimeout(() => {
+          progressContainer.style.display = 'none';
+          resultDiv.innerText = "This tool only supports Welsh postcodes.";
+        }, 2500);
+        return;
+      }
 
-        const { longitude, latitude, country } = data.result;
-        if (country !== "Wales") {
-          resultDiv.textContent = "This tool only supports Welsh postcodes.";
-          return;
-        }
+      const point = [longitude, latitude];
+      const match = boundaries.features.find(f =>
+        inside(point, f.geometry.coordinates[0][0])
+      );
 
-        const point = [longitude, latitude];
-        const match = boundaries.features.find(f =>
-          inside(point, f.geometry.coordinates[0][0])
-        );
-
+      setTimeout(() => {
+        progressContainer.style.display = 'none';
         if (match) {
-          resultDiv.innerHTML = `Your 2026 Senedd constituency is:<br><span class="const-name">${match.properties.enw_cymrae}</span>`;
+          resultDiv.innerHTML = `Your 2026 Senedd constituency is: <span class="const-name">${match.properties.enw_cymrae}</span>`;
         } else {
-          resultDiv.textContent = "Could not find your constituency.";
+          resultDiv.innerText = "Could not find your constituency.";
         }
-      } catch {
-        resultDiv.textContent = "Something went wrong. Please try again.";
-      }
-    });
-
-    function inside(point, vs) {
-      const x = point[0], y = point[1];
-      let inside = false;
-      for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-        const xi = vs[i][0], yi = vs[i][1];
-        const xj = vs[j][0], yj = vs[j][1];
-        const intersect = ((yi > y) !== (yj > y)) &&
-          (x < (xj - xi) * (y - yi) / ((yj - yi) + 0.00001) + xi);
-        if (intersect) inside = !inside;
-      }
-      return inside;
+      }, 2500);
+    } catch {
+      setTimeout(() => {
+        progressContainer.style.display = 'none';
+        resultDiv.innerText = "Something went wrong. Please try again.";
+      }, 2500);
     }
-  </script>
+  });
+
+  function inside(point, vs) {
+    const x = point[0], y = point[1];
+    let inside = false;
+    for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+      const xi = vs[i][0], yi = vs[i][1];
+      const xj = vs[j][0], yj = vs[j][1];
+
+      const intersect = ((yi > y) !== (yj > y)) &&
+        (x < (xj - xi) * (y - yi) / ((yj - yi) + 0.00001) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  }
+</script>
 </body>
 </html>
