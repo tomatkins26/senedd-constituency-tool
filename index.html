@@ -1,128 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Find Your 2026 Senedd Constituency</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f8f8f8;
-      color: #000;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      color: #28394E;
+      background-color: #f9fafa;
     }
-
-    .container {
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 12px;
-      padding: 2rem;
-      max-width: 500px;
-      width: 90%;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    }
-
     h2 {
       color: #006473;
-      margin-bottom: 1.5rem;
       text-align: center;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 0.5rem;
-    }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 0.75rem;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      box-sizing: border-box;
       margin-bottom: 1rem;
     }
-
-    button {
-      background-color: #006473;
-      color: #fff;
-      padding: 0.75rem 1rem;
+    label, input, button {
       font-size: 1rem;
+      display: block;
+      width: 100%;
+    }
+    label {
+      margin-bottom: 0.25rem;
+    }
+    input {
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: 2px solid #006473;
+      border-radius: 8px;
+      box-sizing: border-box;
+      outline-offset: 2px;
+      color: #28394E;
+      font-weight: 500;
+    }
+    input:focus {
+      border-color: #28394E;
+    }
+    button {
+      padding: 0.5rem;
+      background-color: #006473;
+      color: white;
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      width: 100%;
-      transition: opacity 0.3s;
+      font-weight: 600;
+      transition: background-color 0.3s ease;
+      margin-top: 0;
     }
-
-    button:hover {
-      opacity: 0.85;
+    button:hover,
+    button:focus {
+      background-color: #004a58;
     }
-
     #result {
-      margin-top: 1.5rem;
-      font-weight: bold;
+      margin-top: 1rem;
+      font-weight: 600;
+      font-size: 1.1rem;
+      min-height: 1.4em;
       text-align: center;
     }
-
-    .const-name {
+    #result strong {
       color: #006473;
     }
-
-    .progress-container {
-      height: 6px;
-      background-color: #ddd;
-      border-radius: 3px;
+    #progress-container {
+      width: 100%;
+      background-color: #e0e0e0;
+      border-radius: 8px;
+      height: 12px;
+      margin-top: 10px;
       overflow: hidden;
-      margin-top: 1rem;
       display: none;
     }
-
-    .progress-bar {
+    #progress-bar {
       height: 100%;
-      background-color: #006473;
       width: 0%;
-      transition: width 2.5s linear;
+      background-color: #006473;
+      transition: width 0.1s ease;
     }
 
-    @media (max-width: 600px) {
-      .container {
-        padding: 1.5rem;
+    @media (max-width: 400px) {
+      body {
+        margin: 1rem;
+        padding: 0.5rem;
+      }
+      button, input {
+        font-size: 0.9rem;
       }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Find Your 2026 Senedd Constituency</h2>
-    <form id="lookup-form">
-      <label for="postcode">Enter your postcode:</label>
-      <input type="text" id="postcode" placeholder="e.g. CF10 1EP" required>
-      <button type="submit">Look up</button>
-    </form>
+  <h2>Find Your 2026 Senedd Constituency</h2>
+  <form id="lookup-form">
+    <label for="postcode">Enter your postcode:</label>
+    <input type="text" id="postcode" placeholder="e.g. CF10 1EP" required autocomplete="off" />
+    <button type="submit">Look up</button>
+  </form>
 
-    <div class="progress-container" id="progress-container">
-      <div class="progress-bar" id="progress-bar"></div>
-    </div>
-
-    <div id="result"></div>
+  <div id="progress-container">
+    <div id="progress-bar"></div>
   </div>
+
+  <div id="result"></div>
 
   <script>
     const form = document.getElementById('lookup-form');
     const resultDiv = document.getElementById('result');
     const progressContainer = document.getElementById('progress-container');
     const progressBar = document.getElementById('progress-bar');
-
     let boundaries = null;
 
+    // Load GeoJSON data
     fetch('senedd2026.json')
       .then(res => res.json())
       .then(data => { boundaries = data; })
-      .catch(err => resultDiv.innerText = "Error loading constituency data.");
+      .catch(() => {
+        resultDiv.innerText = "Error loading constituency data.";
+      });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -130,45 +127,80 @@
       resultDiv.innerText = '';
       progressBar.style.width = '0%';
       progressContainer.style.display = 'block';
-      progressBar.offsetHeight; // force reflow
-      progressBar.style.width = '100%';
+
+      // Start animating the progress bar
+      let progress = 0;
+      let animationFrame;
+      let lastTime = performance.now();
+
+      function animateProgress(time) {
+        const delta = time - lastTime;
+        lastTime = time;
+        // Random speed between 0.2% and 1% per 100ms equivalent
+        let speed = 0.2 + Math.random() * 0.8;
+        progress += speed * (delta / 100);
+        if (progress > 95) progress = 95; // cap before finishing
+
+        progressBar.style.width = progress + '%';
+
+        if (progress < 95) {
+          animationFrame = requestAnimationFrame(animateProgress);
+        }
+      }
+      animationFrame = requestAnimationFrame(animateProgress);
 
       try {
+        // Fetch postcode data
         const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
         const data = await res.json();
-        if (!data.result) throw new Error("Invalid postcode");
+
+        if (!data.result) throw new Error('Invalid postcode');
         const { longitude, latitude, country } = data.result;
 
         if (country !== "Wales") {
+          cancelAnimationFrame(animationFrame);
+          progressBar.style.width = '100%';
           setTimeout(() => {
             progressContainer.style.display = 'none';
             resultDiv.innerText = "This tool only supports Welsh postcodes.";
-          }, 2500);
+          }, 500);
           return;
         }
 
         const point = [longitude, latitude];
-        const match = boundaries.features.find(f =>
-          inside(point, f.geometry.coordinates[0][0])
-        );
+
+        // Wait 2.5 seconds total (includes the fetch time)
+        await new Promise(resolve => setTimeout(resolve, 2500));
+
+        cancelAnimationFrame(animationFrame);
+        progressBar.style.width = '100%';
+
+        const match = boundaries.features.find(f => {
+          // Polygons may be nested array: use first array
+          const coords = f.geometry.coordinates[0];
+          return inside(point, coords);
+        });
 
         setTimeout(() => {
           progressContainer.style.display = 'none';
           if (match) {
-            resultDiv.innerHTML = `Your 2026 Senedd constituency is: <span class="const-name">${match.properties.enw_cymrae}</span>`;
+            resultDiv.innerHTML = `Your 2026 Senedd constituency is: <strong>${match.properties.enw_cymrae}</strong>`;
           } else {
             resultDiv.innerText = "Could not find your constituency.";
           }
-        }, 2500);
+        }, 300);
+
       } catch (err) {
-        console.error(err);
+        cancelAnimationFrame(animationFrame);
+        progressBar.style.width = '100%';
         setTimeout(() => {
           progressContainer.style.display = 'none';
           resultDiv.innerText = "Something went wrong. Please try again.";
-        }, 2500);
+        }, 300);
       }
     });
 
+    // Point-in-polygon function
     function inside(point, vs) {
       const x = point[0], y = point[1];
       let inside = false;
