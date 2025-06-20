@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Find Your 2026 Senedd Constituency</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    label, input, button {
+      font-size: 1rem;
+    }
+    input {
+      padding: 0.5rem;
+      width: 100%;
+      margin-top: 0.25rem;
+      margin-bottom: 1rem;
+    }
+    button {
+      padding: 0.5rem 1rem;
+    }
+    #result {
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h2>Find Your 2026 Senedd Constituency</h2>
+  <form id="lookup-form">
+    <label for="postcode">Enter your postcode:</label>
+    <input type="text" id="postcode" placeholder="e.g. CF10 1EP" required>
+    <button type="submit">Look up</button>
+  </form>
+  <div id="result"></div>
+
+  <script>
+    const form = document.getElementById('lookup-form');
+    const resultDiv = document.getElementById('result');
+    let boundaries = null;
+
+    // Load GeoJSON
+    fetch('senedd2026.json')
+      .then(res => res.json())
+      .then(data => { boundaries = data; })
+      .catch(err => resultDiv.innerText = "Error loading constituency data.");
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const postcode = document.getElementById('postcode').value.trim();
+      resultDiv.innerText = 'Looking up...';
+
+      try {
+        const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
+        const data = await res.json();
+        if (!data.result) throw new Error("Invalid postcode");
+        const { longitude, latitude, country } = data.result;
+
+        if (country !== "Wales") {
+          resultDiv.innerText = "This tool only supports Welsh postcodes.";
+          return;
+        }
+
+        const point = [longitude, latitude];
+
+        const match = boundaries.features.find(f =>
+          inside(point, f.geometry.coordinates[0][0])
+        );
+
+        if (match) {
+          resultDiv.innerText = `Your 2026 Senedd constituency is: ${match.properties.constituency}`;
+        } else {
+          resultDiv.innerText = "Could not find your constituency.";
+        }
+      } catch (err) {
+        console.error(err);
+        resultDiv.innerText = "Something went wrong. Please try again.";
+      }
+    });
+
+    // Point-in-polygon function
+    function inside(point, vs) {
+      const x = point[0], y = point[1];
+      let inside = false;
+      for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        const xi = vs[i][0], yi = vs[i][1];
+        const xj = vs[j][0], yj = vs[j][1];
+
+        const intersect = ((yi > y) !== (yj > y)) &&
+          (x < (xj - xi) * (y - yi) / (yj - yi + 0.00001) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+  </script>
+</body>
+</html>
