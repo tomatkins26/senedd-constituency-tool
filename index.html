@@ -23,7 +23,7 @@
       max-width: 500px;
       width: 90%;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      transition: transform 0.3s ease;
+      /* desktop stays as is */
     }
 
     h2 {
@@ -46,6 +46,7 @@
       border-radius: 8px;
       box-sizing: border-box;
       margin-bottom: 1rem;
+      transition: font-size 0.3s ease, padding 0.3s ease;
     }
 
     button {
@@ -90,17 +91,30 @@
       transition: width 2.5s linear;
     }
 
+    /* Mobile improvements */
     @media (max-width: 600px) {
       .container {
-        padding: 3rem 2.5rem;
-        transform: scale(1.05);
+        width: 95%;
+        max-width: none;
+        padding: 2.5rem 2rem;
       }
       h2 {
-        font-size: 1.75rem;
+        font-size: 1.8rem;
+        margin-bottom: 1.75rem;
       }
-      input[type="text"], button {
+      label {
         font-size: 1.1rem;
+      }
+      input[type="text"] {
+        font-size: 1.15rem;
         padding: 1rem;
+      }
+      button {
+        font-size: 1.15rem;
+        padding: 1rem;
+      }
+      #result {
+        font-size: 1.15rem;
       }
     }
   </style>
@@ -110,7 +124,7 @@
     <h2>Find Your 2026 Senedd Constituency</h2>
     <form id="lookup-form">
       <label for="postcode">Enter your postcode:</label>
-      <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required>
+      <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
       <button type="submit">Look up</button>
     </form>
 
