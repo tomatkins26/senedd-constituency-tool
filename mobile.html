@@ -3,64 +3,88 @@
 <head>
   <meta charset="UTF-8" />
   <title>Senedd Constituency Finder - Mobile</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #006473;
-      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f8f8f8;
+      color: #28394E;
       margin: 0;
-      padding: 2rem;
+      padding: 2rem 1rem;
       display: flex;
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    .container {
+      background: white;
+      border-radius: 12px;
+      max-width: 375px;
+      width: 100%;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      text-align: center;
     }
 
     h1 {
-      font-size: 2rem;
-      margin-bottom: 1.5rem;
-      text-align: center;
+      font-size: 2.25rem;
+      color: #006473;
+      margin-bottom: 2rem;
+      font-weight: 600;
     }
 
     input[type="text"] {
       width: 100%;
-      max-width: 300px;
-      padding: 1rem;
-      font-size: 1.2rem;
-      border-radius: 10px;
-      border: none;
-      margin-bottom: 1rem;
+      padding: 1.25rem;
+      font-size: 1.4rem;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      margin-bottom: 1.5rem;
+      box-sizing: border-box;
+      color: #28394E;
     }
 
     button {
-      background-color: #004a56;
+      background-color: #006473;
       color: white;
       border: none;
-      border-radius: 10px;
-      padding: 1rem 1.5rem;
-      font-size: 1.2rem;
+      border-radius: 12px;
+      padding: 1.25rem 1rem;
+      font-size: 1.4rem;
       width: 100%;
-      max-width: 300px;
       cursor: pointer;
+      transition: opacity 0.3s;
+      font-weight: 600;
+    }
+
+    button:hover {
+      opacity: 0.85;
     }
 
     #result {
-      margin-top: 1.5rem;
-      font-size: 1.2rem;
+      margin-top: 2rem;
+      font-size: 1.5rem;
       font-weight: bold;
-      text-align: center;
       min-height: 3rem;
+      color: #28394E;
+    }
+
+    .const-name {
+      color: #006473;
     }
   </style>
 </head>
 <body>
-  <h1>Find Your 2026 Senedd Constituency</h1>
-  <form id="lookup-form">
-    <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
-    <button type="submit">Look up</button>
-  </form>
-
-  <div id="result"></div>
+  <div class="container">
+    <h1>Find Your 2026 Senedd Constituency</h1>
+    <form id="lookup-form">
+      <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
+      <button type="submit">Look up</button>
+    </form>
+    <div id="result"></div>
+  </div>
 
   <script>
     const form = document.getElementById('lookup-form');
@@ -96,7 +120,7 @@
         );
 
         if (match) {
-          resultDiv.innerHTML = `Your 2026 Senedd constituency is:<br><strong>${match.properties.enw_cymrae}</strong>`;
+          resultDiv.innerHTML = `Your 2026 Senedd constituency is:<br><span class="const-name">${match.properties.enw_cymrae}</span>`;
         } else {
           resultDiv.textContent = "Could not find your constituency.";
         }
