@@ -87,7 +87,6 @@
     }
 
     .location-button {
-      margin-top: 0.5rem;
       background: none;
       border: none;
       color: var(--primary-color);
@@ -96,12 +95,22 @@
       gap: 0.5rem;
       cursor: pointer;
       font-size: 0.95rem;
+      width: 100%;
+      justify-content: center;
+      padding: 0.75rem;
+      border-radius: 8px;
+      transition: background 0.2s ease;
+    }
+
+    .location-button:hover {
+      background-color: #d4e8ec;
     }
 
     .location-button svg {
       width: 20px;
       height: 20px;
-      fill: var(--primary-color);
+      stroke: var(--primary-color);
+      fill: none;
     }
 
     .progress-container {
@@ -170,15 +179,18 @@
     <form id="lookup-form">
       <label for="postcode">Enter your postcode:</label>
       <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
+      
+      <button class="location-button" id="use-location" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="6" x2="12" y2="12"/>
+          <line x1="16" y1="14" x2="12" y2="12"/>
+        </svg>
+        Use current location
+      </button>
+      
       <button type="submit">Look up</button>
     </form>
-
-    <button class="location-button" id="use-location">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-        <path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8zm0-6c.552 0 1 .448 1 1v2.07a8.001 8.001 0 0 1 6.93 6.93H22a1 1 0 1 1 0 2h-2.07a8.001 8.001 0 0 1-6.93 6.93V22a1 1 0 1 1-2 0v-2.07a8.001 8.001 0 0 1-6.93-6.93H2a1 1 0 1 1 0-2h2.07a8.001 8.001 0 0 1 6.93-6.93V3c0-.552.448-1 1-1z"/>
-      </svg>
-      Use current location
-    </button>
 
     <div class="progress-container" id="progress-container">
       <div class="progress-bar" id="progress-bar"></div>
@@ -187,7 +199,6 @@
     <div id="result"></div>
 
     <footer>
-      Made by Tom Atkins<br>
       Data from Senedd Cymru / Welsh Parliament<br>
       No data is stored or tracked.
     </footer>
