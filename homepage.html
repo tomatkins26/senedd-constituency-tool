@@ -25,32 +25,43 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      align-items: flex-end;
+      align-items: flex-start;
       padding: 1rem 2rem 2rem 2rem;
     }
 
-    /* NAVIGATION BAR */
+    /* NAVIGATION BAR - full width bg */
     nav {
       background: var(--primary-color);
-      width: 100%;
-      max-width: 960px;
-      box-shadow: none;
-      border-radius: 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.75rem 1rem;
+      width: 100vw;
+      left: 0;
       position: sticky;
       top: 0;
       z-index: 10;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 2rem; /* padding so content not cramped */
+      box-shadow: none;
+      border-radius: 0;
+    }
+
+    /* Inner container to constrain nav content */
+    nav > .nav-content {
+      width: 100%;
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       color: white;
     }
 
     nav ul {
       list-style: none;
       display: flex;
-      gap: 1.25rem;
-      font-weight: 600;
+      gap: 2rem; /* wider gaps */
+      font-weight: 400; /* normal weight */
       font-size: 1rem;
       color: white;
     }
@@ -69,7 +80,7 @@
 
     /* Logo placeholder */
     .logo {
-      font-weight: 700;
+      font-weight: 400;
       font-size: 1.2rem;
       color: white;
       user-select: none;
@@ -80,27 +91,29 @@
     /* Search widget */
     .search-widget {
       display: flex;
-      gap: 0.5rem;
       align-items: center;
+      position: relative;
       min-width: 280px;
       color: black;
+      font-weight: 400;
     }
 
     .search-widget input[type="text"] {
-      flex-grow: 1;
-      padding: 0.5rem 0.75rem;
+      width: 100%;
+      padding: 0.5rem 3rem 0.5rem 0.75rem; /* right padding for icon */
       border-radius: 8px;
       border: none;
       font-size: 1rem;
       font-family: var(--font);
       color: #222;
+      box-sizing: border-box;
     }
 
     .search-widget input[type="text"]::placeholder {
       color: #777;
     }
 
-    .search-widget button {
+    .search-widget button[type="submit"] {
       background-color: white;
       border: none;
       color: var(--primary-color);
@@ -110,32 +123,47 @@
       cursor: pointer;
       font-size: 1rem;
       transition: background-color 0.2s ease;
+      margin-left: 0.5rem;
       flex-shrink: 0;
     }
 
-    .search-widget button:hover,
-    .search-widget button:focus {
+    .search-widget button[type="submit"]:hover,
+    .search-widget button[type="submit"]:focus {
       background-color: #d4f1f4;
       outline: none;
     }
 
-    /* Current location button */
+    /* Current location button inside input */
     .current-location-btn {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
       background: transparent;
       border: none;
       cursor: pointer;
       padding: 0;
-      margin-left: 0.3rem;
-      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
+      width: 24px;
+      height: 24px;
+      fill: grey;
+      transition: fill 0.3s ease;
+    }
+
+    .current-location-btn:hover,
+    .current-location-btn:focus {
+      fill: var(--primary-color);
+      outline: none;
     }
 
     .current-location-btn svg {
-      fill: var(--primary-color);
       width: 24px;
       height: 24px;
+      pointer-events: none;
+      fill: currentColor;
+      stroke: none;
     }
 
     /* MAIN CONTAINERS */
@@ -147,9 +175,12 @@
       box-shadow: none;
       padding: 1.5rem 1.5rem;
       margin-top: 1.5rem;
-      text-align: right;
+      text-align: left;
       color: var(--primary-color);
       font-weight: 600;
+      padding-left: 2rem;
+      padding-right: 2rem;
+      box-sizing: border-box;
     }
 
     .container h2 {
@@ -170,13 +201,13 @@
       line-height: 1.4;
       color: #222;
       max-width: 700px;
-      margin-left: auto;
+      margin-left: 0;
     }
 
     /* Responsive adjustments */
     @media (max-width: 480px) {
       nav ul {
-        gap: 0.75rem;
+        gap: 1rem;
         font-size: 0.9rem;
       }
 
@@ -186,7 +217,7 @@
 
       .container {
         padding: 1rem 1rem;
-        text-align: right;
+        text-align: left;
       }
 
       .container h2 {
@@ -199,7 +230,7 @@
 
       body {
         padding: 1rem 1rem 2rem 1rem;
-        align-items: flex-end;
+        align-items: flex-start;
       }
     }
   </style>
@@ -207,25 +238,27 @@
 <body>
 
   <nav>
-    <div class="logo" aria-label="Senedd logo">SeneddLogo</div>
+    <div class="nav-content">
+      <div class="logo" aria-label="Senedd logo">SeneddLogo</div>
 
-    <ul>
-      <li><a href="#">Latest News</a></li>
-      <li><a href="#">Analysis</a></li>
-      <li><a href="#">Constituencies</a></li>
-      <li><a href="#">More</a></li>
-    </ul>
+      <ul>
+        <li><a href="#">Latest News</a></li>
+        <li><a href="#">Analysis</a></li>
+        <li><a href="#">Constituencies</a></li>
+        <li><a href="#">More</a></li>
+      </ul>
 
-    <form id="search-form" class="search-widget" role="search" aria-label="Search Senedd Constituency">
-      <input type="text" id="postcode" name="postcode" placeholder="Enter postcode" aria-label="Postcode" required />
-      <button type="submit" aria-label="Look up postcode">Look up</button>
-      <button type="button" class="current-location-btn" title="Use current location" aria-label="Use current location">
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <circle cx="12" cy="12" r="8" stroke="#006473" stroke-width="2" fill="none" />
-          <circle cx="12" cy="12" r="4" fill="#006473" />
-        </svg>
-      </button>
-    </form>
+      <form id="search-form" class="search-widget" role="search" aria-label="Search Senedd Constituency">
+        <input type="text" id="postcode" name="postcode" placeholder="Enter postcode" aria-label="Postcode" required />
+        <button type="submit" aria-label="Look up postcode">Look up</button>
+        <button type="button" class="current-location-btn" title="Use current location" aria-label="Use current location">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" >
+            <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2" fill="none" />
+            <circle cx="12" cy="12" r="4" fill="currentColor" />
+          </svg>
+        </button>
+      </form>
+    </div>
   </nav>
 
   <div class="container wales-decides-container" aria-live="polite">
