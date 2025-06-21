@@ -23,13 +23,13 @@
     }
 
     .container {
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 12px;
+      background: #fff;         /* white background */
+      border: 1px solid #ccc;  /* light border */
+      border-radius: 12px;     /* keep rounded corners */
       padding: 2rem;
       max-width: 500px;
       width: 90%;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* subtle shadow */
       margin-bottom: 2rem;
     }
 
@@ -136,35 +136,42 @@
 
     footer {
       text-align: center;
-      font-size: 0.7rem;
-      color: #999;
+      font-size: 0.7rem;       /* smaller font size */
+      color: #999;             /* lighter text color */
       padding: 0.5rem 0;
       width: 100%;
-      background: transparent;
+      background: transparent; /* transparent background */
       position: fixed;
       bottom: 0;
       left: 0;
       user-select: none;
     }
 
-    .fade-toggle {
+    #info-text {
+      opacity: 0;
+      height: 0;
+      overflow: hidden;
+      transition: opacity 0.5s ease, height 0.5s ease;
+      margin-top: 0.25rem;
+      color: #666;
+    }
+
+    #toggle-info-btn {
       background: none;
       border: none;
       color: #006473;
       cursor: pointer;
       font-size: 0.7rem;
-      padding: 0.25rem;
-      transition: opacity 0.3s;
+      margin-top: 0.25rem;
+      padding: 0;
+      user-select: none;
+      text-decoration: underline;
+      font-weight: 600;
+      letter-spacing: 0.03em;
     }
 
-    .fade-toggle span {
-      transition: opacity 0.3s ease;
-      display: inline-block;
-      opacity: 1;
-    }
-
-    .fade-toggle.fade-out span {
-      opacity: 0;
+    #toggle-info-btn:hover {
+      color: #004a54;
     }
 
     @media (max-width: 600px) {
@@ -211,10 +218,12 @@
 
   <footer>
     Made by Tom Atkins | Data from Senedd Cymru/Welsh Parliament<br />
-    Your location is only used temporarily to look up your postcode. It is not stored or tracked.<br />
-    <button id="toggle-info-btn" class="fade-toggle"><span>More information</span></button>
+    <div id="info-text">
+      Your location is only used temporarily to look up your postcode. It is not stored or tracked.
+    </div>
+    <button id="toggle-info-btn"><span>More information</span></button>
   </footer>
-
+  
   <script>
     const form = document.getElementById('lookup-form');
     const resultDiv = document.getElementById('result');
@@ -237,7 +246,7 @@
       resultDiv.innerText = '';
       progressBar.style.width = '0%';
       progressContainer.style.display = 'block';
-      progressBar.offsetHeight;
+      progressBar.offsetHeight; // trigger reflow
       progressBar.style.width = '100%';
 
       try {
@@ -289,7 +298,7 @@
       resultDiv.innerText = '';
       progressBar.style.width = '0%';
       progressContainer.style.display = 'block';
-      progressBar.offsetHeight;
+      progressBar.offsetHeight; // trigger reflow
       progressBar.style.width = '100%';
 
       navigator.geolocation.getCurrentPosition(async (position) => {
@@ -314,18 +323,23 @@
       });
     });
 
-    // Toggle "More information" / "Less information"
+    // Toggle "More information" / "Less information" in footer
     const toggleBtn = document.getElementById('toggle-info-btn');
-    const toggleSpan = toggleBtn?.querySelector('span');
+    const toggleSpan = toggleBtn.querySelector('span');
+    const infoText = document.getElementById('info-text');
 
-    toggleBtn?.addEventListener('click', () => {
-      toggleBtn.classList.add('fade-out');
-      setTimeout(() => {
-        toggleSpan.textContent = toggleSpan.textContent === 'More information'
-          ? 'Less information'
-          : 'More information';
-        toggleBtn.classList.remove('fade-out');
-      }, 300);
+    toggleBtn.addEventListener('click', () => {
+      if (infoText.style.opacity === '0' || infoText.style.opacity === '') {
+        // Show info text
+        infoText.style.height = 'auto'; // let it expand naturally
+        infoText.style.opacity = '1';
+        toggleSpan.textContent = 'Less information';
+      } else {
+        // Hide info text
+        infoText.style.opacity = '0';
+        infoText.style.height = '0';
+        toggleSpan.textContent = 'More information';
+      }
     });
   </script>
 </body>
