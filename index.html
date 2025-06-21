@@ -37,17 +37,51 @@
       margin-bottom: 0.5rem;
     }
 
-    input[type="text"] {
-      width: 100%;
-      padding: 0.75rem;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      box-sizing: border-box;
+    /* Flex container for postcode input + icon button */
+    .postcode-wrapper {
+      display: flex;
+      align-items: center;
       margin-bottom: 1rem;
     }
 
-    button {
+    input[type="text"] {
+      flex-grow: 1;
+      padding: 0.75rem 0.75rem 0.75rem 0.75rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px 0 0 8px;
+      box-sizing: border-box;
+      outline-offset: 0;
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: #006473;
+      box-shadow: 0 0 3px #006473;
+    }
+
+    button.icon-button {
+      background-color: #006473;
+      border: 1px solid #006473;
+      border-left: none;
+      border-radius: 0 8px 8px 0;
+      color: #fff;
+      cursor: pointer;
+      padding: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      transition: background-color 0.3s;
+    }
+
+    button.icon-button:hover {
+      background-color: #004f57;
+      border-color: #004f57;
+    }
+
+    button[type="submit"] {
       background-color: #006473;
       color: #fff;
       padding: 0.75rem 1rem;
@@ -57,10 +91,9 @@
       cursor: pointer;
       width: 100%;
       transition: opacity 0.3s;
-      margin-bottom: 1rem;
     }
 
-    button:hover {
+    button[type="submit"]:hover {
       opacity: 0.85;
     }
 
@@ -103,7 +136,7 @@
         padding: 1.5rem;
       }
       input[type="text"],
-      button {
+      button[type="submit"] {
         font-size: 1.1rem;
       }
     }
@@ -114,8 +147,21 @@
     <h2>Find Your 2026 Senedd Constituency</h2>
     <form id="lookup-form">
       <label for="postcode">Enter your postcode:</label>
-      <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
-      <button type="button" id="use-location">Use my current location</button>
+      <div class="postcode-wrapper">
+        <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
+        <button type="button" id="use-location" class="icon-button" title="Use my current location" aria-label="Use my current location">
+          <!-- Target icon SVG -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-target" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="6"></circle>
+            <circle cx="12" cy="12" r="2"></circle>
+            <line x1="22" y1="12" x2="18" y2="12"></line>
+            <line x1="6" y1="12" x2="2" y2="12"></line>
+            <line x1="12" y1="6" x2="12" y2="2"></line>
+            <line x1="12" y1="22" x2="12" y2="18"></line>
+          </svg>
+        </button>
+      </div>
       <button type="submit">Look up</button>
     </form>
 
@@ -175,7 +221,7 @@
               .toLowerCase()
               .replace(/\s+/g, '-')
               .replace(/[^\w-]/g, '');
-            const url = `cons/${slug}.html`;
+            const url = `cons/${slug}`;
 
             resultDiv.innerHTML = `Your 2026 Senedd constituency is: <a href="${url}" class="const-name">${match.properties.enw_cymrae}</a>`;
           } else {
