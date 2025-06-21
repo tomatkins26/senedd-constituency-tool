@@ -20,6 +20,13 @@
       justify-content: center;
       align-items: center;
       min-height: 100vh;
+      padding: 1rem;
+    }
+
+    .logo {
+      max-width: 180px;
+      margin-bottom: 1.5rem;
+      user-select: none;
     }
 
     .container {
@@ -192,10 +199,16 @@
         font-size: 0.6rem;
         padding: 0.4rem 0;
       }
+      .logo {
+        max-width: 140px;
+        margin-bottom: 1rem;
+      }
     }
   </style>
 </head>
 <body>
+  <img src="21601.svg" alt="Logo" class="logo" />
+
   <div class="container">
     <h2>Find Your 2026 Senedd Constituency</h2>
     <form id="lookup-form">
@@ -332,12 +345,10 @@
 
     toggleBtn.addEventListener('click', () => {
       if (infoText.style.opacity === '0' || infoText.style.opacity === '') {
-        // Show info text
-        infoText.style.height = 'auto'; // let it expand naturally
+        infoText.style.height = 'auto';
         infoText.style.opacity = '1';
         toggleSpan.textContent = 'Less information';
       } else {
-        // Hide info text
         infoText.style.opacity = '0';
         infoText.style.height = '0';
         toggleSpan.textContent = 'More information';
