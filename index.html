@@ -1,21 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>
-  // Simple mobile detection
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-  if (isMobile) {
-    // Redirect mobile users to the mobile version of the page
-    window.location.href = 'mobile.html';
-  }
-</script>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Find Your 2026 Senedd Constituency</title>
+  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background-color: #e5eff1;
+      background-color: #f8f8f8;
       color: #000;
       display: flex;
       justify-content: center;
@@ -32,14 +24,12 @@
       max-width: 500px;
       width: 90%;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      /* desktop stays as is */
     }
 
     h2 {
       color: #006473;
       margin-bottom: 1.5rem;
       text-align: center;
-      font-size: 1.5rem;
     }
 
     label {
@@ -55,7 +45,6 @@
       border-radius: 8px;
       box-sizing: border-box;
       margin-bottom: 1rem;
-      transition: font-size 0.3s ease, padding 0.3s ease;
     }
 
     button {
@@ -100,30 +89,17 @@
       transition: width 2.5s linear;
     }
 
-    /* Mobile improvements */
     @media (max-width: 600px) {
+      body {
+        transform: scale(1.1);
+        transform-origin: top center;
+      }
       .container {
-        width: 95%;
-        max-width: none;
-        padding: 2.5rem 2rem;
+        padding: 1.5rem;
       }
-      h2 {
-        font-size: 1.8rem;
-        margin-bottom: 1.75rem;
-      }
-      label {
-        font-size: 1.1rem;
-      }
-      input[type="text"] {
-        font-size: 1.15rem;
-        padding: 1rem;
-      }
+      input[type="text"],
       button {
-        font-size: 1.15rem;
-        padding: 1rem;
-      }
-      #result {
-        font-size: 1.15rem;
+        font-size: 1.1rem;
       }
     }
   </style>
@@ -133,7 +109,7 @@
     <h2>Find Your 2026 Senedd Constituency</h2>
     <form id="lookup-form">
       <label for="postcode">Enter your postcode:</label>
-      <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
+      <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required>
       <button type="submit">Look up</button>
     </form>
 
@@ -163,7 +139,7 @@
       resultDiv.innerText = '';
       progressBar.style.width = '0%';
       progressContainer.style.display = 'block';
-      progressBar.offsetHeight; // force reflow
+      progressBar.offsetHeight;
       progressBar.style.width = '100%';
 
       try {
@@ -180,9 +156,9 @@
           return;
         }
 
-        const point = [longitude, latitude];
+        const userPoint = turf.point([longitude, latitude]);
         const match = boundaries.features.find(f =>
-          inside(point, f.geometry.coordinates[0][0])
+          turf.booleanPointInPolygon(userPoint, f)
         );
 
         setTimeout(() => {
@@ -201,20 +177,6 @@
         }, 2500);
       }
     });
-
-    function inside(point, vs) {
-      const x = point[0], y = point[1];
-      let inside = false;
-      for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-        const xi = vs[i][0], yi = vs[i][1];
-        const xj = vs[j][0], yj = vs[j][1];
-
-        const intersect = ((yi > y) !== (yj > y)) &&
-          (x < (xj - xi) * (y - yi) / ((yj - yi) + 0.00001) + xi);
-        if (intersect) inside = !inside;
-      }
-      return inside;
-    }
   </script>
 </body>
 </html>
