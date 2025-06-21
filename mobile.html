@@ -10,52 +10,56 @@
     :root {
       --primary-color: #006473;
       --bg-color: #E5EFF1;
-      --text-color: #000;
-      --font-family: 'Public Sans', sans-serif;
+      --font: 'Public Sans', sans-serif;
     }
 
     * {
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     body {
-      margin: 0;
-      font-family: var(--font-family);
+      font-family: var(--font);
       background-color: var(--bg-color);
-      color: var(--text-color);
       display: flex;
-      flex-direction: column;
+      justify-content: center;
       align-items: center;
+      min-height: 100vh;
       padding: 1rem;
     }
 
     .container {
+      background: #fff;
+      padding: 2rem 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      text-align: center;
       width: 100%;
       max-width: 460px;
-      background: #fff;
-      padding: 1.5rem;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
 
     .logo {
-      display: block;
+      max-width: 130px;
       margin: 0 auto 1rem;
-      max-width: 140px;
-      height: auto;
+      display: block;
     }
 
     h2 {
-      text-align: center;
-      font-size: 1.25rem;
+      font-size: 1.3rem;
       color: var(--primary-color);
-      margin-bottom: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      align-items: center;
     }
 
     label {
-      display: block;
-      font-size: 0.95rem;
-      margin-bottom: 0.4rem;
+      font-size: 1rem;
     }
 
     input[type="text"] {
@@ -64,31 +68,31 @@
       font-size: 1rem;
       border: 1px solid #ccc;
       border-radius: 8px;
-      margin-bottom: 1rem;
     }
 
     button[type="submit"] {
       width: 100%;
       background-color: var(--primary-color);
-      color: #fff;
+      color: white;
+      font-weight: bold;
+      font-size: 1rem;
+      padding: 0.75rem;
       border: none;
       border-radius: 8px;
-      padding: 0.75rem;
-      font-size: 1rem;
-      font-weight: 600;
       cursor: pointer;
+      transition: background 0.2s ease;
     }
 
     button[type="submit"]:hover {
-      opacity: 0.9;
+      background-color: #004e5a;
     }
 
     .progress-container {
       height: 6px;
       background-color: #ddd;
       border-radius: 3px;
-      overflow: hidden;
       margin-top: 1rem;
+      overflow: hidden;
       display: none;
     }
 
@@ -96,14 +100,13 @@
       height: 100%;
       background-color: var(--primary-color);
       width: 0%;
-      transition: width 2.5s linear;
+      transition: width 2.5s ease;
     }
 
     #result {
       margin-top: 1.25rem;
       font-size: 1rem;
       font-weight: bold;
-      text-align: center;
     }
 
     .const-name {
@@ -116,27 +119,28 @@
     }
 
     footer {
-      text-align: center;
       font-size: 0.75rem;
-      color: #777;
+      color: #666;
       margin-top: 2rem;
+      text-align: center;
     }
 
     @media (max-width: 480px) {
-      h2 {
-        font-size: 1.1rem;
+      .container {
+        padding: 1.5rem 1rem;
       }
 
-      input, button {
+      h2 {
+        font-size: 1.2rem;
+      }
+
+      input,
+      button {
         font-size: 1rem;
       }
 
-      .container {
-        padding: 1.25rem;
-      }
-
       .logo {
-        max-width: 120px;
+        max-width: 110px;
       }
     }
   </style>
@@ -145,6 +149,7 @@
   <div class="container">
     <img src="21601.svg" alt="Site logo" class="logo" />
     <h2>Find Your 2026 Senedd Constituency</h2>
+
     <form id="lookup-form">
       <label for="postcode">Enter your postcode:</label>
       <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
@@ -156,14 +161,15 @@
     </div>
 
     <div id="result"></div>
+
+    <footer>
+      Made by Tom Atkins<br>
+      Data from Senedd Cymru / Welsh Parliament<br>
+      No data is stored or tracked.
+    </footer>
   </div>
 
-  <footer>
-    Made by Tom Atkins<br />
-    Data from Senedd Cymru / Welsh Parliament<br />
-    No data is stored or tracked — location use is temporary and anonymous.
-  </footer>
-
+  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
   <script>
     const form = document.getElementById('lookup-form');
     const resultDiv = document.getElementById('result');
@@ -182,4 +188,43 @@
       resultDiv.innerText = '';
       progressBar.style.width = '0%';
       progressContainer.style.display = 'block';
-      progressBar.
+      progressBar.offsetHeight;
+      progressBar.style.width = '100%';
+
+      try {
+        const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
+        const data = await res.json();
+        if (!data.result) throw new Error('Invalid postcode');
+        const { longitude, latitude, country } = data.result;
+
+        if (country !== 'Wales') {
+          setTimeout(() => {
+            progressContainer.style.display = 'none';
+            resultDiv.innerText = 'This tool only supports Welsh postcodes.';
+          }, 2500);
+          return;
+        }
+
+        const userPoint = turf.point([longitude, latitude]);
+        const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
+
+        setTimeout(() => {
+          progressContainer.style.display = 'none';
+          if (match) {
+            const slug = match.properties.enw_cymrae.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+            resultDiv.innerHTML = `Your 2026 Senedd constituency is: <a href="cons/${slug}.html" class="const-name">${match.properties.enw_cymrae}</a>`;
+          } else {
+            resultDiv.innerText = 'Could not find your constituency.';
+          }
+        }, 2500);
+      } catch (err) {
+        console.error(err);
+        setTimeout(() => {
+          progressContainer.style.display = 'none';
+          resultDiv.innerText = 'Something went wrong. Please try again.';
+        }, 2500);
+      }
+    });
+  </script>
+</body>
+</html>
