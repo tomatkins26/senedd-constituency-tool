@@ -37,48 +37,47 @@
       margin-bottom: 0.5rem;
     }
 
-    /* Flex container for postcode input + icon button */
     .postcode-wrapper {
-      display: flex;
-      align-items: center;
+      position: relative;
       margin-bottom: 1rem;
     }
 
-    input[type="text"] {
-      flex-grow: 1;
-      padding: 0.75rem 0.75rem 0.75rem 0.75rem;
+    .postcode-wrapper input[type="text"] {
+      width: 100%;
+      padding: 0.75rem 2.5rem 0.75rem 0.75rem;
       font-size: 1rem;
       border: 1px solid #ccc;
-      border-radius: 8px 0 0 8px;
+      border-radius: 8px;
       box-sizing: border-box;
-      outline-offset: 0;
       outline: none;
     }
 
-    input[type="text"]:focus {
+    .postcode-wrapper input[type="text"]:focus {
       border-color: #006473;
       box-shadow: 0 0 3px #006473;
     }
 
-    button.icon-button {
-      background-color: #006473;
-      border: 1px solid #006473;
-      border-left: none;
-      border-radius: 0 8px 8px 0;
-      color: #fff;
+    .postcode-wrapper button.icon-button {
+      position: absolute;
+      top: 50%;
+      right: 0.5rem;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
       cursor: pointer;
-      padding: 0.5rem;
+      padding: 0;
+      margin: 0;
+      color: #888;
+      font-size: 1.4rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 40px;
-      height: 40px;
-      transition: background-color 0.3s;
+      transition: color 0.2s ease, transform 0.2s ease;
     }
 
-    button.icon-button:hover {
-      background-color: #004f57;
-      border-color: #004f57;
+    .postcode-wrapper button.icon-button:hover {
+      color: #006473;
+      transform: translateY(-50%) scale(1.1);
     }
 
     button[type="submit"] {
@@ -107,6 +106,7 @@
       color: #006473;
       text-decoration: none;
     }
+
     .const-name:hover {
       text-decoration: underline;
     }
@@ -151,7 +151,7 @@
         <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
         <button type="button" id="use-location" class="icon-button" title="Use my current location" aria-label="Use my current location">
           <!-- Target icon SVG -->
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-target" viewBox="0 0 24 24">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10"></circle>
             <circle cx="12" cy="12" r="6"></circle>
             <circle cx="12" cy="12" r="2"></circle>
@@ -221,7 +221,7 @@
               .toLowerCase()
               .replace(/\s+/g, '-')
               .replace(/[^\w-]/g, '');
-            const url = `cons/${slug}`;
+            const url = `cons/${slug}.html`;
 
             resultDiv.innerHTML = `Your 2026 Senedd constituency is: <a href="${url}" class="const-name">${match.properties.enw_cymrae}</a>`;
           } else {
@@ -252,7 +252,6 @@
       navigator.geolocation.getCurrentPosition(async (position) => {
         try {
           const { latitude, longitude } = position.coords;
-          // Reverse geocode coordinates to postcode
           const res = await fetch(`https://api.postcodes.io/postcodes?lon=${longitude}&lat=${latitude}`);
           const data = await res.json();
 
@@ -261,14 +260,12 @@
           const postcode = data.result[0].postcode;
           document.getElementById('postcode').value = postcode;
 
-          // Trigger the form submit event programmatically
           form.dispatchEvent(new Event('submit'));
-
         } catch (err) {
           progressContainer.style.display = 'none';
           resultDiv.innerText = 'Could not find postcode from your location.';
         }
-      }, (err) => {
+      }, () => {
         progressContainer.style.display = 'none';
         alert('Unable to retrieve your location.');
       });
