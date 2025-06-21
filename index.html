@@ -23,13 +23,13 @@
     }
 
     .container {
-      background: #fff;         /* white background */
-      border: 1px solid #ccc;  /* light border */
-      border-radius: 12px;     /* keep rounded corners */
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 12px;
       padding: 2rem;
       max-width: 500px;
       width: 90%;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* subtle shadow */
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       margin-bottom: 2rem;
     }
 
@@ -136,15 +136,35 @@
 
     footer {
       text-align: center;
-      font-size: 0.7rem;       /* smaller font size */
-      color: #999;             /* lighter text color */
+      font-size: 0.7rem;
+      color: #999;
       padding: 0.5rem 0;
       width: 100%;
-      background: transparent; /* transparent background */
+      background: transparent;
       position: fixed;
       bottom: 0;
       left: 0;
       user-select: none;
+    }
+
+    .fade-toggle {
+      background: none;
+      border: none;
+      color: #006473;
+      cursor: pointer;
+      font-size: 0.7rem;
+      padding: 0.25rem;
+      transition: opacity 0.3s;
+    }
+
+    .fade-toggle span {
+      transition: opacity 0.3s ease;
+      display: inline-block;
+      opacity: 1;
+    }
+
+    .fade-toggle.fade-out span {
+      opacity: 0;
     }
 
     @media (max-width: 600px) {
@@ -190,13 +210,11 @@
   </div>
 
   <footer>
-  Made by Tom Atkins | Data from Senedd Cymru/Welsh Parliament
-</footer>
+    Made by Tom Atkins | Data from Senedd Cymru/Welsh Parliament<br />
+    Your location is only used temporarily to look up your postcode. It is not stored or tracked.<br />
+    <button id="toggle-info-btn" class="fade-toggle"><span>More information</span></button>
+  </footer>
 
-<div class="disclaimer">
-  Your location is only used temporarily to look up your postcode. It is not stored or tracked.
-</div>
-  
   <script>
     const form = document.getElementById('lookup-form');
     const resultDiv = document.getElementById('result');
@@ -219,7 +237,7 @@
       resultDiv.innerText = '';
       progressBar.style.width = '0%';
       progressContainer.style.display = 'block';
-      progressBar.offsetHeight; // trigger reflow
+      progressBar.offsetHeight;
       progressBar.style.width = '100%';
 
       try {
@@ -271,7 +289,7 @@
       resultDiv.innerText = '';
       progressBar.style.width = '0%';
       progressContainer.style.display = 'block';
-      progressBar.offsetHeight; // trigger reflow
+      progressBar.offsetHeight;
       progressBar.style.width = '100%';
 
       navigator.geolocation.getCurrentPosition(async (position) => {
@@ -294,6 +312,20 @@
         progressContainer.style.display = 'none';
         alert('Unable to retrieve your location.');
       });
+    });
+
+    // Toggle "More information" / "Less information"
+    const toggleBtn = document.getElementById('toggle-info-btn');
+    const toggleSpan = toggleBtn?.querySelector('span');
+
+    toggleBtn?.addEventListener('click', () => {
+      toggleBtn.classList.add('fade-out');
+      setTimeout(() => {
+        toggleSpan.textContent = toggleSpan.textContent === 'More information'
+          ? 'Less information'
+          : 'More information';
+        toggleBtn.classList.remove('fade-out');
+      }, 300);
     });
   </script>
 </body>
