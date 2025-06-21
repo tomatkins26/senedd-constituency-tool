@@ -7,43 +7,53 @@
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
   <style>
     html, body {
-      height: 100%;
       margin: 0;
-    }
-
-    body {
+      padding: 0;
+      height: 100%;
       font-family: 'Public Sans', sans-serif;
       background-color: #E5EFF1;
       color: #000;
       display: flex;
-      flex-direction: column;
-      justify-content: flex-start; /* Align to top */
+      justify-content: flex-start;
       align-items: center;
       min-height: 100vh;
-      padding-top: 2rem; /* small padding top */
+      flex-direction: column;
+      padding-top: 1rem;
     }
 
     .container {
       background: #fff;
       border: 1px solid #ccc;
       border-radius: 12px;
-      padding: 2rem;
-      max-width: 500px;
+      padding: 2rem 1.5rem 2rem 1.5rem;
+      max-width: 400px;
       width: 90%;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      margin-bottom: 2rem;
       text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    /* Logo container */
+    .logo {
+      display: block;
+      margin: 0 auto 0.5rem auto;
+      width: 90px;
+      height: auto;
     }
 
     h2 {
       color: #006473;
-      margin-bottom: 1rem; /* closer to logo if you add it */
+      margin-top: 0;
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+      line-height: 1.2;
     }
 
     label {
       display: block;
       margin-bottom: 0.5rem;
       text-align: left;
+      font-size: 1rem;
     }
 
     .postcode-wrapper {
@@ -52,34 +62,37 @@
 
     .postcode-wrapper input[type="text"] {
       width: 100%;
-      padding: 0.75rem;
-      font-size: 1rem;
+      padding: 0.75rem 1rem;
+      font-size: 1.1rem;
       border: 1px solid #ccc;
       border-radius: 8px;
       box-sizing: border-box;
       outline: none;
+      transition: border-color 0.3s, box-shadow 0.3s;
     }
 
     .postcode-wrapper input[type="text"]:focus {
       border-color: #006473;
-      box-shadow: 0 0 3px #006473;
+      box-shadow: 0 0 4px #006473;
     }
 
-    /* New centered Use location button */
     #use-location {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 0.5rem 1rem;
+      padding: 0.6rem 1.1rem;
       border-radius: 8px;
       border: 1.5px solid #006473;
       background: #fff;
       color: #006473;
       cursor: pointer;
       font-weight: 600;
-      font-size: 1rem;
+      font-size: 1.1rem;
       margin-bottom: 1rem;
+      width: 100%;
+      max-width: 300px;
       transition: background-color 0.3s, color 0.3s;
+      user-select: none;
     }
 
     #use-location:hover {
@@ -88,20 +101,22 @@
     }
 
     #use-location svg {
-      margin-right: 0.5rem;
+      margin-right: 0.6rem;
       stroke-width: 2;
     }
 
     button[type="submit"] {
       background-color: #006473;
       color: #fff;
-      padding: 0.75rem 1rem;
-      font-size: 1rem;
+      padding: 0.8rem 1.5rem;
+      font-size: 1.1rem;
       border: none;
       border-radius: 8px;
       cursor: pointer;
       width: 100%;
+      max-width: 300px;
       transition: opacity 0.3s;
+      user-select: none;
     }
 
     button[type="submit"]:hover {
@@ -110,8 +125,10 @@
 
     #result {
       margin-top: 1.5rem;
-      font-weight: bold;
+      font-weight: 700;
       text-align: center;
+      font-size: 1.1rem;
+      min-height: 2.4em;
     }
 
     .const-name {
@@ -130,6 +147,9 @@
       overflow: hidden;
       margin-top: 1rem;
       display: none;
+      max-width: 300px;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     .progress-bar {
@@ -141,14 +161,11 @@
 
     footer {
       text-align: center;
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       color: #999;
-      padding: 0.5rem 0;
+      padding: 0.5rem 1rem;
       width: 100%;
       background: transparent;
-      position: fixed;
-      bottom: 0;
-      left: 0;
       user-select: none;
     }
 
@@ -159,8 +176,11 @@
       transition: opacity 0.5s ease, height 0.5s ease;
       margin-top: 0.25rem;
       color: #999;
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       text-align: center;
+      max-width: 300px;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     #toggle-info-btn {
@@ -168,7 +188,7 @@
       border: none;
       color: #006473;
       cursor: pointer;
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       margin-top: 0.25rem;
       padding: 0;
       user-select: none;
@@ -181,32 +201,37 @@
       color: #004a54;
     }
 
-    @media (max-width: 600px) {
-      body {
-        padding-top: 1.5rem;
-      }
+    @media (min-width: 601px) {
       .container {
-        padding: 1.5rem;
+        max-width: 500px;
+        padding: 2rem;
       }
-      input[type="text"],
-      button[type="submit"],
-      #use-location {
-        font-size: 1.1rem;
+
+      h2 {
+        font-size: 2rem;
       }
-      footer {
-        font-size: 0.6rem;
-        padding: 0.4rem 0;
+
+      #use-location,
+      button[type="submit"] {
+        font-size: 1rem;
+        max-width: 100%;
+        width: auto;
+      }
+
+      #info-text {
+        max-width: 500px;
       }
     }
   </style>
 </head>
 <body>
   <div class="container">
+    <img src="21601.svg" alt="Logo" class="logo" />
     <h2>Find Your 2026 Senedd Constituency</h2>
-    <form id="lookup-form">
+    <form id="lookup-form" novalidate>
       <label for="postcode">Enter your postcode:</label>
       <div class="postcode-wrapper">
-        <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
+        <input type="text" id="postcode" name="postcode" placeholder="e.g. CF99 1SN" required autocomplete="postal-code" />
       </div>
 
       <button type="button" id="use-location" title="Use my current location" aria-label="Use my current location">
@@ -224,7 +249,7 @@
       <div class="progress-bar" id="progress-bar"></div>
     </div>
 
-    <div id="result"></div>
+    <div id="result" role="status" aria-live="polite"></div>
   </div>
 
   <footer>
@@ -232,7 +257,7 @@
     <div id="info-text">
       Your location is only used temporarily to look up your postcode. It is not stored or tracked.
     </div>
-    <button id="toggle-info-btn"><span>More information</span></button>
+    <button id="toggle-info-btn" aria-expanded="false"><span>More information</span></button>
   </footer>
 
   <script>
@@ -241,6 +266,9 @@
     const progressContainer = document.getElementById('progress-container');
     const progressBar = document.getElementById('progress-bar');
     const useLocationBtn = document.getElementById('use-location');
+    const infoText = document.getElementById('info-text');
+    const toggleBtn = document.getElementById('toggle-info-btn');
+    const toggleSpan = toggleBtn.querySelector('span');
 
     let boundaries = null;
 
@@ -334,20 +362,17 @@
       });
     });
 
-    // Toggle "More information" / "Less information" in footer
-    const toggleBtn = document.getElementById('toggle-info-btn');
-    const toggleSpan = toggleBtn.querySelector('span');
-    const infoText = document.getElementById('info-text');
-
     toggleBtn.addEventListener('click', () => {
       if (infoText.style.opacity === '0' || infoText.style.opacity === '') {
         infoText.style.height = 'auto';
         infoText.style.opacity = '1';
         toggleSpan.textContent = 'Less information';
+        toggleBtn.setAttribute('aria-expanded', 'true');
       } else {
         infoText.style.opacity = '0';
         infoText.style.height = '0';
         toggleSpan.textContent = 'More information';
+        toggleBtn.setAttribute('aria-expanded', 'false');
       }
     });
   </script>
