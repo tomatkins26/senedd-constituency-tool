@@ -5,15 +5,20 @@
   <title>Find Your 2026 Senedd Constituency</title>
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
   <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+
     body {
       font-family: 'Public Sans', sans-serif;
       background-color: #E5EFF1;
       color: #000;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      margin: 0;
     }
 
     .container {
@@ -24,6 +29,7 @@
       max-width: 500px;
       width: 90%;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      margin-bottom: 2rem;
     }
 
     h2 {
@@ -127,6 +133,19 @@
       transition: width 2.5s linear;
     }
 
+    footer {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #666;
+      padding: 1rem 0;
+      width: 100%;
+      border-top: 1px solid #ccc;
+      background: #f9f9f9;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+    }
+
     @media (max-width: 600px) {
       body {
         transform: scale(1.1);
@@ -139,6 +158,10 @@
       button[type="submit"] {
         font-size: 1.1rem;
       }
+      footer {
+        font-size: 0.8rem;
+        padding: 0.75rem 0;
+      }
     }
   </style>
 </head>
@@ -150,10 +173,10 @@
       <div class="postcode-wrapper">
         <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
         <button type="button" id="use-location" class="icon-button" title="Use my current location" aria-label="Use my current location">
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
-  </svg>
-</button>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+          </svg>
+        </button>
       </div>
       <button type="submit">Look up</button>
     </form>
@@ -164,6 +187,10 @@
 
     <div id="result"></div>
   </div>
+
+  <footer>
+    Made by Tom Atkins, Data from Senedd Cymru/Welsh Parliament
+  </footer>
 
   <script>
     const form = document.getElementById('lookup-form');
