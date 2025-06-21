@@ -175,7 +175,7 @@
               .toLowerCase()
               .replace(/\s+/g, '-')
               .replace(/[^\w-]/g, '');
-            const url = `cons/${slug}`;
+            const url = `cons/${slug}.html`;
 
             resultDiv.innerHTML = `Your 2026 Senedd constituency is: <a href="${url}" class="const-name">${match.properties.enw_cymrae}</a>`;
           } else {
