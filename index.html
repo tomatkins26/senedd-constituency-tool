@@ -23,13 +23,13 @@
     }
 
     .container {
-      background: #fff;         /* white background */
-      border: 1px solid #ccc;  /* light border */
-      border-radius: 12px;     /* keep rounded corners */
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 12px;
       padding: 2rem;
       max-width: 500px;
       width: 90%;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* subtle shadow */
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       margin-bottom: 2rem;
     }
 
@@ -136,11 +136,11 @@
 
     footer {
       text-align: center;
-      font-size: 0.7rem;       /* smaller font size */
-      color: #999;             /* lighter text color */
+      font-size: 0.7rem;
+      color: #999;
       padding: 0.5rem 0;
       width: 100%;
-      background: transparent; /* transparent background */
+      background: transparent;
       position: fixed;
       bottom: 0;
       left: 0;
@@ -153,9 +153,9 @@
       overflow: hidden;
       transition: opacity 0.5s ease, height 0.5s ease;
       margin-top: 0.25rem;
-      color: #999;          /* match footer color */
-      font-size: 0.7rem;    /* match footer font size */
-      text-align: center;   /* align text center like footer */
+      color: #999;
+      font-size: 0.7rem;
+      text-align: center;
     }
 
     #toggle-info-btn {
@@ -174,6 +174,33 @@
 
     #toggle-info-btn:hover {
       color: #004a54;
+    }
+
+    /* Autocomplete list styles */
+    #autocomplete-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      border: 1px solid #ccc;
+      border-top: none;
+      max-height: 150px;
+      overflow-y: auto;
+      position: absolute;
+      width: 100%;
+      background: white;
+      z-index: 10;
+      display: none;
+      border-radius: 0 0 8px 8px;
+      box-sizing: border-box;
+    }
+
+    #autocomplete-list li {
+      padding: 0.5rem;
+      cursor: pointer;
+    }
+
+    #autocomplete-list li:hover {
+      background-color: #e0f2f5;
     }
 
     @media (max-width: 600px) {
@@ -201,12 +228,13 @@
     <form id="lookup-form">
       <label for="postcode">Enter your postcode:</label>
       <div class="postcode-wrapper">
-        <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
+        <input type="text" id="postcode" placeholder="e.g. CF99 1SN" autocomplete="off" required />
         <button type="button" id="use-location" class="icon-button" title="Use my current location" aria-label="Use my current location">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
           </svg>
         </button>
+        <ul id="autocomplete-list"></ul>
       </div>
       <button type="submit">Look up</button>
     </form>
@@ -232,6 +260,8 @@
     const progressContainer = document.getElementById('progress-container');
     const progressBar = document.getElementById('progress-bar');
     const useLocationBtn = document.getElementById('use-location');
+    const postcodeInput = document.getElementById('postcode');
+    const autocompleteList = document.getElementById('autocomplete-list');
 
     let boundaries = null;
 
@@ -242,9 +272,12 @@
       })
       .catch(err => (resultDiv.innerText = 'Error loading constituency data.'));
 
+    // Main form submit handler
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const postcode = document.getElementById('postcode').value.trim();
+      clearAutocomplete();
+
+      const postcode = postcodeInput.value.trim();
       resultDiv.innerText = '';
       progressBar.style.width = '0%';
       progressContainer.style.display = 'block';
@@ -291,12 +324,14 @@
       }
     });
 
+    // Use current location button handler
     useLocationBtn.addEventListener('click', () => {
       if (!navigator.geolocation) {
         alert('Geolocation is not supported by your browser.');
         return;
       }
 
+      clearAutocomplete();
       resultDiv.innerText = '';
       progressBar.style.width = '0%';
       progressContainer.style.display = 'block';
@@ -312,7 +347,7 @@
           if (!data.result || data.result.length === 0) throw new Error('Could not find postcode');
 
           const postcode = data.result[0].postcode;
-          document.getElementById('postcode').value = postcode;
+          postcodeInput.value = postcode;
 
           form.dispatchEvent(new Event('submit'));
         } catch (err) {
@@ -332,17 +367,63 @@
 
     toggleBtn.addEventListener('click', () => {
       if (infoText.style.opacity === '0' || infoText.style.opacity === '') {
-        // Show info text
-        infoText.style.height = 'auto'; // let it expand naturally
+        infoText.style.height = 'auto';
         infoText.style.opacity = '1';
         toggleSpan.textContent = 'Less information';
       } else {
-        // Hide info text
         infoText.style.opacity = '0';
         infoText.style.height = '0';
         toggleSpan.textContent = 'More information';
       }
     });
+
+    // Autocomplete postcode input handler
+    postcodeInput.addEventListener('input', async () => {
+      const query = postcodeInput.value.trim();
+
+      if (query.length < 3) {
+        clearAutocomplete();
+        return;
+      }
+
+      try {
+        const res = await fetch(`https://api.postcodes.io/postcodes/autocomplete/${encodeURIComponent(query)}`);
+        const data = await res.json();
+
+        if (!data.result || data.result.length === 0) {
+          clearAutocomplete();
+          return;
+        }
+
+        autocompleteList.innerHTML = data.result
+          .map(postcode => `<li>${postcode}</li>`)
+          .join('');
+        autocompleteList.style.display = 'block';
+
+        [...autocompleteList.children].forEach(li => {
+          li.addEventListener('click', () => {
+            postcodeInput.value = li.textContent;
+            clearAutocomplete();
+            postcodeInput.focus();
+          });
+        });
+      } catch (err) {
+        console.error('Autocomplete error:', err);
+        clearAutocomplete();
+      }
+    });
+
+    // Hide autocomplete on clicking outside
+    document.addEventListener('click', (e) => {
+      if (e.target !== postcodeInput) {
+        clearAutocomplete();
+      }
+    });
+
+    function clearAutocomplete() {
+      autocompleteList.style.display = 'none';
+      autocompleteList.innerHTML = '';
+    }
   </script>
 </body>
 </html>
