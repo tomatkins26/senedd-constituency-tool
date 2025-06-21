@@ -10,10 +10,40 @@
       background-color: #E5EFF1;
       color: #000;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
-      min-height: 100vh;
       margin: 0;
+      min-height: 100vh;
+    }
+
+    .navbar {
+      width: 100%;
+      background-color: #006473;
+      padding: 0.75rem 1rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .nav-links {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    .nav-links li {
+      margin: 0 0.75rem;
+    }
+
+    .nav-links a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .nav-links a:hover {
+      text-decoration: underline;
     }
 
     .container {
@@ -24,6 +54,7 @@
       max-width: 500px;
       width: 90%;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      margin-top: 2rem;
     }
 
     h2 {
@@ -94,17 +125,40 @@
         transform: scale(1.1);
         transform-origin: top center;
       }
+
       .container {
         padding: 1.5rem;
       }
+
       input[type="text"],
       button {
         font-size: 1.1rem;
+      }
+
+      .nav-links {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .nav-links li {
+        margin: 0.5rem 0;
       }
     }
   </style>
 </head>
 <body>
+
+  <nav class="navbar">
+    <ul class="nav-links">
+      <li><a href="/uk">UK</a></li>
+      <li><a href="/world">World</a></li>
+      <li><a href="/politics">Politics</a></li>
+      <li><a href="/entertainment">Entertainment</a></li>
+      <li><a href="/sport">Sport</a></li>
+      <li><a href="/weather">Weather</a></li>
+    </ul>
+  </nav>
+
   <div class="container">
     <h2>Find Your 2026 Senedd Constituency</h2>
     <form id="lookup-form">
