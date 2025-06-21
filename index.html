@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Find Your 2026 Senedd Constituency</title>
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
   <style>
@@ -71,6 +71,10 @@
 
     .const-name {
       color: #006473;
+      text-decoration: none;
+    }
+    .const-name:hover {
+      text-decoration: underline;
     }
 
     .progress-container {
@@ -109,7 +113,7 @@
     <h2>Find Your 2026 Senedd Constituency</h2>
     <form id="lookup-form">
       <label for="postcode">Enter your postcode:</label>
-      <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required>
+      <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
       <button type="submit">Look up</button>
     </form>
 
@@ -130,8 +134,10 @@
 
     fetch('senedd2026.json')
       .then(res => res.json())
-      .then(data => { boundaries = data; })
-      .catch(err => resultDiv.innerText = "Error loading constituency data.");
+      .then(data => {
+        boundaries = data;
+      })
+      .catch(err => (resultDiv.innerText = 'Error loading constituency data.'));
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -139,41 +145,45 @@
       resultDiv.innerText = '';
       progressBar.style.width = '0%';
       progressContainer.style.display = 'block';
-      progressBar.offsetHeight;
+      progressBar.offsetHeight; // trigger reflow
       progressBar.style.width = '100%';
 
       try {
-        const res = await fetch(https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)});
+        const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
         const data = await res.json();
-        if (!data.result) throw new Error("Invalid postcode");
+        if (!data.result) throw new Error('Invalid postcode');
         const { longitude, latitude, country } = data.result;
 
-        if (country !== "Wales") {
+        if (country !== 'Wales') {
           setTimeout(() => {
             progressContainer.style.display = 'none';
-            resultDiv.innerText = "This tool only supports Welsh postcodes.";
+            resultDiv.innerText = 'This tool only supports Welsh postcodes.';
           }, 2500);
           return;
         }
 
         const userPoint = turf.point([longitude, latitude]);
-        const match = boundaries.features.find(f =>
-          turf.booleanPointInPolygon(userPoint, f)
-        );
+        const match = boundaries.features.find((f) => turf.booleanPointInPolygon(userPoint, f));
 
         setTimeout(() => {
           progressContainer.style.display = 'none';
           if (match) {
-            resultDiv.innerHTML = Your 2026 Senedd constituency is: <span class="const-name">${match.properties.enw_cymrae}</span>;
+            const slug = match.properties.enw_cymrae
+              .toLowerCase()
+              .replace(/\s+/g, '-')
+              .replace(/[^\w-]/g, '');
+            const url = `/constituencies/${slug}`;
+
+            resultDiv.innerHTML = `Your 2026 Senedd constituency is: <a href="${url}" class="const-name">${match.properties.enw_cymrae}</a>`;
           } else {
-            resultDiv.innerText = "Could not find your constituency.";
+            resultDiv.innerText = 'Could not find your constituency.';
           }
         }, 2500);
       } catch (err) {
         console.error(err);
         setTimeout(() => {
           progressContainer.style.display = 'none';
-          resultDiv.innerText = "Something went wrong. Please try again.";
+          resultDiv.innerText = 'Something went wrong. Please try again.';
         }, 2500);
       }
     });
