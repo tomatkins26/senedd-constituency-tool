@@ -3,136 +3,131 @@
 <head>
   <meta charset="UTF-8" />
   <title>Find Your 2026 Senedd Constituency</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600&display=swap" rel="stylesheet" />
   <style>
-    html, body {
+    :root {
+      --primary-color: #006473;
+      --bg-color: #E5EFF1;
+      --font: 'Public Sans', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
-      height: 100%;
-      font-family: 'Public Sans', sans-serif;
-      background-color: #E5EFF1;
-      color: #000;
+    }
+
+    body {
+      font-family: var(--font);
+      background-color: var(--bg-color);
       display: flex;
-      justify-content: flex-start;
-      align-items: center;
-      min-height: 100vh;
-      flex-direction: column;
-      padding-top: 1rem;
+      justify-content: center;
+      padding: 2rem 1rem;
     }
 
     .container {
       background: #fff;
-      border: 1px solid #ccc;
+      padding: 2rem 1.5rem;
       border-radius: 12px;
-      padding: 2rem 1.5rem 2rem 1.5rem;
-      max-width: 400px;
-      width: 90%;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       text-align: center;
-      margin-bottom: 2rem;
+      width: 100%;
+      max-width: 460px;
+      margin-top: 1rem;
     }
 
-    /* Logo container */
     .logo {
+      max-width: 130px;
+      margin: 0 auto 1rem;
       display: block;
-      margin: 0 auto 0.5rem auto;
-      width: 90px;
-      height: auto;
     }
 
     h2 {
-      color: #006473;
-      margin-top: 0;
-      margin-bottom: 1rem;
-      font-size: 1.5rem;
-      line-height: 1.2;
+      font-size: 1.3rem;
+      color: var(--primary-color);
+      margin-bottom: 1.5rem;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      align-items: center;
     }
 
     label {
-      display: block;
-      margin-bottom: 0.5rem;
-      text-align: left;
       font-size: 1rem;
     }
 
-    .postcode-wrapper {
-      margin-bottom: 1rem;
-    }
-
-    .postcode-wrapper input[type="text"] {
+    input[type="text"] {
       width: 100%;
-      padding: 0.75rem 1rem;
-      font-size: 1.1rem;
+      padding: 0.75rem;
+      font-size: 1rem;
       border: 1px solid #ccc;
       border-radius: 8px;
-      box-sizing: border-box;
-      outline: none;
-      transition: border-color 0.3s, box-shadow 0.3s;
-    }
-
-    .postcode-wrapper input[type="text"]:focus {
-      border-color: #006473;
-      box-shadow: 0 0 4px #006473;
-    }
-
-    #use-location {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.6rem 1.1rem;
-      border-radius: 8px;
-      border: 1.5px solid #006473;
-      background: #fff;
-      color: #006473;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 1.1rem;
-      margin-bottom: 1rem;
-      width: 100%;
-      max-width: 300px;
-      transition: background-color 0.3s, color 0.3s;
-      user-select: none;
-    }
-
-    #use-location:hover {
-      background-color: #006473;
-      color: #fff;
-    }
-
-    #use-location svg {
-      margin-right: 0.6rem;
-      stroke-width: 2;
     }
 
     button[type="submit"] {
-      background-color: #006473;
-      color: #fff;
-      padding: 0.8rem 1.5rem;
-      font-size: 1.1rem;
+      width: 100%;
+      background-color: var(--primary-color);
+      color: white;
+      font-weight: bold;
+      font-size: 1rem;
+      padding: 0.75rem;
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      width: 100%;
-      max-width: 300px;
-      transition: opacity 0.3s;
-      user-select: none;
+      transition: background 0.2s ease;
     }
 
     button[type="submit"]:hover {
-      opacity: 0.85;
+      background-color: #004e5a;
+    }
+
+    .location-button {
+      margin-top: 0.5rem;
+      background: none;
+      border: none;
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+
+    .location-button svg {
+      width: 20px;
+      height: 20px;
+      fill: var(--primary-color);
+    }
+
+    .progress-container {
+      height: 6px;
+      background-color: #ddd;
+      border-radius: 3px;
+      margin-top: 1rem;
+      overflow: hidden;
+      display: none;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background-color: var(--primary-color);
+      width: 0%;
+      transition: width 2.5s ease;
     }
 
     #result {
-      margin-top: 1.5rem;
-      font-weight: 700;
-      text-align: center;
-      font-size: 1.1rem;
-      min-height: 2.4em;
+      margin-top: 1.25rem;
+      font-size: 1rem;
+      font-weight: bold;
     }
 
     .const-name {
-      color: #006473;
+      color: var(--primary-color);
       text-decoration: none;
     }
 
@@ -140,153 +135,104 @@
       text-decoration: underline;
     }
 
-    .progress-container {
-      height: 6px;
-      background-color: #ddd;
-      border-radius: 3px;
-      overflow: hidden;
-      margin-top: 1rem;
-      display: none;
-      max-width: 300px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .progress-bar {
-      height: 100%;
-      background-color: #006473;
-      width: 0%;
-      transition: width 2.5s linear;
-    }
-
     footer {
+      font-size: 0.75rem;
+      color: #666;
+      margin-top: 2rem;
       text-align: center;
-      font-size: 0.75rem;
-      color: #999;
-      padding: 0.5rem 1rem;
-      width: 100%;
-      background: transparent;
-      user-select: none;
     }
 
-    #info-text {
-      opacity: 0;
-      height: 0;
-      overflow: hidden;
-      transition: opacity 0.5s ease, height 0.5s ease;
-      margin-top: 0.25rem;
-      color: #999;
-      font-size: 0.75rem;
-      text-align: center;
-      max-width: 300px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    #toggle-info-btn {
-      background: none;
-      border: none;
-      color: #006473;
-      cursor: pointer;
-      font-size: 0.75rem;
-      margin-top: 0.25rem;
-      padding: 0;
-      user-select: none;
-      text-decoration: underline;
-      font-weight: 600;
-      letter-spacing: 0.03em;
-    }
-
-    #toggle-info-btn:hover {
-      color: #004a54;
-    }
-
-    @media (min-width: 601px) {
+    @media (max-width: 480px) {
       .container {
-        max-width: 500px;
-        padding: 2rem;
+        padding: 1.5rem 1rem;
       }
 
       h2 {
-        font-size: 2rem;
+        font-size: 1.2rem;
       }
 
-      #use-location,
-      button[type="submit"] {
+      input,
+      button {
         font-size: 1rem;
-        max-width: 100%;
-        width: auto;
       }
 
-      #info-text {
-        max-width: 500px;
+      .logo {
+        max-width: 110px;
       }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <img src="21601.svg" alt="Logo" class="logo" />
+    <img src="21601.svg" alt="Site logo" class="logo" />
     <h2>Find Your 2026 Senedd Constituency</h2>
-    <form id="lookup-form" novalidate>
+
+    <form id="lookup-form">
       <label for="postcode">Enter your postcode:</label>
-      <div class="postcode-wrapper">
-        <input type="text" id="postcode" name="postcode" placeholder="e.g. CF99 1SN" required autocomplete="postal-code" />
-      </div>
-
-      <button type="button" id="use-location" title="Use my current location" aria-label="Use my current location">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#006473" stroke-width="2" >
-          <circle cx="12" cy="12" r="9" />
-          <circle cx="12" cy="12" r="3" fill="#006473" stroke="none" />
-        </svg>
-        Use current location
-      </button>
-
+      <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
       <button type="submit">Look up</button>
     </form>
+
+    <button class="location-button" id="use-location">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8zm0-6c.552 0 1 .448 1 1v2.07a8.001 8.001 0 0 1 6.93 6.93H22a1 1 0 1 1 0 2h-2.07a8.001 8.001 0 0 1-6.93 6.93V22a1 1 0 1 1-2 0v-2.07a8.001 8.001 0 0 1-6.93-6.93H2a1 1 0 1 1 0-2h2.07a8.001 8.001 0 0 1 6.93-6.93V3c0-.552.448-1 1-1z"/>
+      </svg>
+      Use current location
+    </button>
 
     <div class="progress-container" id="progress-container">
       <div class="progress-bar" id="progress-bar"></div>
     </div>
 
-    <div id="result" role="status" aria-live="polite"></div>
+    <div id="result"></div>
+
+    <footer>
+      Data from Senedd Cymru / Welsh Parliament<br>
+      No data is stored or tracked.
+    </footer>
   </div>
 
-  <footer>
-    Made by Tom Atkins | Data from Senedd Cymru/Welsh Parliament<br />
-    <div id="info-text">
-      Your location is only used temporarily to look up your postcode. It is not stored or tracked.
-    </div>
-    <button id="toggle-info-btn" aria-expanded="false"><span>More information</span></button>
-  </footer>
-
+  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
   <script>
     const form = document.getElementById('lookup-form');
+    const locationBtn = document.getElementById('use-location');
     const resultDiv = document.getElementById('result');
     const progressContainer = document.getElementById('progress-container');
     const progressBar = document.getElementById('progress-bar');
-    const useLocationBtn = document.getElementById('use-location');
-    const infoText = document.getElementById('info-text');
-    const toggleBtn = document.getElementById('toggle-info-btn');
-    const toggleSpan = toggleBtn.querySelector('span');
-
     let boundaries = null;
 
     fetch('senedd2026.json')
       .then(res => res.json())
-      .then(data => {
-        boundaries = data;
-      })
-      .catch(err => (resultDiv.innerText = 'Error loading constituency data.'));
+      .then(data => boundaries = data)
+      .catch(() => resultDiv.innerText = 'Error loading data.');
+
+    function showProgress() {
+      resultDiv.innerText = '';
+      progressBar.style.width = '0%';
+      progressContainer.style.display = 'block';
+      progressBar.offsetHeight;
+      progressBar.style.width = '100%';
+    }
+
+    function displayResult(lon, lat) {
+      const userPoint = turf.point([lon, lat]);
+      const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
+
+      setTimeout(() => {
+        progressContainer.style.display = 'none';
+        if (match) {
+          const slug = match.properties.enw_cymrae.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+          resultDiv.innerHTML = `Your 2026 Senedd constituency is: <a href="cons/${slug}.html" class="const-name">${match.properties.enw_cymrae}</a>`;
+        } else {
+          resultDiv.innerText = 'Could not find your constituency.';
+        }
+      }, 2500);
+    }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const postcode = document.getElementById('postcode').value.trim();
-      resultDiv.innerText = '';
-      progressBar.style.width = '0%';
-      progressContainer.style.display = 'block';
-      progressBar.offsetHeight; // trigger reflow
-      progressBar.style.width = '100%';
+      showProgress();
 
       try {
         const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
@@ -302,25 +248,8 @@
           return;
         }
 
-        const userPoint = turf.point([longitude, latitude]);
-        const match = boundaries.features.find((f) => turf.booleanPointInPolygon(userPoint, f));
-
-        setTimeout(() => {
-          progressContainer.style.display = 'none';
-          if (match) {
-            const slug = match.properties.enw_cymrae
-              .toLowerCase()
-              .replace(/\s+/g, '-')
-              .replace(/[^\w-]/g, '');
-            const url = `cons/${slug}.html`;
-
-            resultDiv.innerHTML = `Your 2026 Senedd constituency is: <a href="${url}" class="const-name">${match.properties.enw_cymrae}</a>`;
-          } else {
-            resultDiv.innerText = 'Could not find your constituency.';
-          }
-        }, 2500);
-      } catch (err) {
-        console.error(err);
+        displayResult(longitude, latitude);
+      } catch {
         setTimeout(() => {
           progressContainer.style.display = 'none';
           resultDiv.innerText = 'Something went wrong. Please try again.';
@@ -328,52 +257,26 @@
       }
     });
 
-    useLocationBtn.addEventListener('click', () => {
+    locationBtn.addEventListener('click', () => {
       if (!navigator.geolocation) {
-        alert('Geolocation is not supported by your browser.');
+        resultDiv.innerText = 'Geolocation is not supported by your browser.';
         return;
       }
 
-      resultDiv.innerText = '';
-      progressBar.style.width = '0%';
-      progressContainer.style.display = 'block';
-      progressBar.offsetHeight; // trigger reflow
-      progressBar.style.width = '100%';
+      showProgress();
 
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        try {
+      navigator.geolocation.getCurrentPosition(
+        position => {
           const { latitude, longitude } = position.coords;
-          const res = await fetch(`https://api.postcodes.io/postcodes?lon=${longitude}&lat=${latitude}`);
-          const data = await res.json();
-
-          if (!data.result || data.result.length === 0) throw new Error('Could not find postcode');
-
-          const postcode = data.result[0].postcode;
-          document.getElementById('postcode').value = postcode;
-
-          form.dispatchEvent(new Event('submit'));
-        } catch (err) {
-          progressContainer.style.display = 'none';
-          resultDiv.innerText = 'Could not find postcode from your location.';
+          displayResult(longitude, latitude);
+        },
+        () => {
+          setTimeout(() => {
+            progressContainer.style.display = 'none';
+            resultDiv.innerText = 'Could not retrieve your location.';
+          }, 2500);
         }
-      }, () => {
-        progressContainer.style.display = 'none';
-        alert('Unable to retrieve your location.');
-      });
-    });
-
-    toggleBtn.addEventListener('click', () => {
-      if (infoText.style.opacity === '0' || infoText.style.opacity === '') {
-        infoText.style.height = 'auto';
-        infoText.style.opacity = '1';
-        toggleSpan.textContent = 'Less information';
-        toggleBtn.setAttribute('aria-expanded', 'true');
-      } else {
-        infoText.style.opacity = '0';
-        infoText.style.height = '0';
-        toggleSpan.textContent = 'More information';
-        toggleBtn.setAttribute('aria-expanded', 'false');
-      }
+      );
     });
   </script>
 </body>
