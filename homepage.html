@@ -9,7 +9,6 @@
   <style>
     :root {
       --primary-color: #006473;
-      --bg-color: #E5EFF1;
       --font: 'Public Sans', sans-serif;
     }
 
@@ -21,22 +20,22 @@
 
     body {
       font-family: var(--font);
-      background-color: var(--bg-color);
+      background-color: #fff;
       color: #222;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      padding-bottom: 2rem;
+      align-items: flex-end;
+      padding: 1rem 2rem 2rem 2rem;
     }
 
     /* NAVIGATION BAR */
     nav {
-      background: #fff;
+      background: var(--primary-color);
       width: 100%;
       max-width: 960px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      border-radius: 0 0 12px 12px;
+      box-shadow: none;
+      border-radius: 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -44,6 +43,7 @@
       position: sticky;
       top: 0;
       z-index: 10;
+      color: white;
     }
 
     nav ul {
@@ -52,18 +52,29 @@
       gap: 1.25rem;
       font-weight: 600;
       font-size: 1rem;
+      color: white;
     }
 
     nav ul li a {
-      color: var(--primary-color);
+      color: white;
       text-decoration: none;
       transition: color 0.2s ease;
     }
 
     nav ul li a:hover,
     nav ul li a:focus {
-      color: #004e5a;
+      color: #a1d3d9;
       outline: none;
+    }
+
+    /* Logo placeholder */
+    .logo {
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: white;
+      user-select: none;
+      margin-right: 1rem;
+      flex-shrink: 0;
     }
 
     /* Search widget */
@@ -71,66 +82,95 @@
       display: flex;
       gap: 0.5rem;
       align-items: center;
-      min-width: 240px;
+      min-width: 280px;
+      color: black;
     }
 
     .search-widget input[type="text"] {
       flex-grow: 1;
       padding: 0.5rem 0.75rem;
       border-radius: 8px;
-      border: 1px solid #ccc;
+      border: none;
       font-size: 1rem;
       font-family: var(--font);
+      color: #222;
+    }
+
+    .search-widget input[type="text"]::placeholder {
+      color: #777;
     }
 
     .search-widget button {
-      background-color: var(--primary-color);
+      background-color: white;
       border: none;
-      color: white;
+      color: var(--primary-color);
       font-weight: 600;
       padding: 0.5rem 1rem;
       border-radius: 8px;
       cursor: pointer;
       font-size: 1rem;
       transition: background-color 0.2s ease;
+      flex-shrink: 0;
     }
 
     .search-widget button:hover,
     .search-widget button:focus {
-      background-color: #004e5a;
+      background-color: #d4f1f4;
       outline: none;
+    }
+
+    /* Current location button */
+    .current-location-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      margin-left: 0.3rem;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .current-location-btn svg {
+      fill: var(--primary-color);
+      width: 24px;
+      height: 24px;
     }
 
     /* MAIN CONTAINERS */
     .container {
-      max-width: 460px;
-      width: 90%;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: none;
+      background: transparent;
+      border-radius: 0;
+      box-shadow: none;
       padding: 1.5rem 1.5rem;
       margin-top: 1.5rem;
-      text-align: center;
+      text-align: right;
+      color: var(--primary-color);
+      font-weight: 600;
     }
 
     .container h2 {
-      color: var(--primary-color);
-      font-weight: 600;
-      margin-bottom: 0.75rem;
       font-size: 1.4rem;
+      margin-bottom: 0.75rem;
     }
 
     .container h3 {
-      color: #004e5a;
       font-weight: 600;
       margin-bottom: 1rem;
       font-size: 1.2rem;
+      color: #004e5a;
     }
 
     .container p {
+      font-weight: 400;
       font-size: 1rem;
       line-height: 1.4;
-      color: #333;
+      color: #222;
+      max-width: 700px;
+      margin-left: auto;
     }
 
     /* Responsive adjustments */
@@ -141,12 +181,12 @@
       }
 
       .search-widget {
-        min-width: 180px;
+        min-width: 200px;
       }
 
       .container {
-        width: 95%;
-        padding: 1.25rem 1rem;
+        padding: 1rem 1rem;
+        text-align: right;
       }
 
       .container h2 {
@@ -156,12 +196,19 @@
       .container h3 {
         font-size: 1.1rem;
       }
+
+      body {
+        padding: 1rem 1rem 2rem 1rem;
+        align-items: flex-end;
+      }
     }
   </style>
 </head>
 <body>
 
   <nav>
+    <div class="logo" aria-label="Senedd logo">SeneddLogo</div>
+
     <ul>
       <li><a href="#">Latest News</a></li>
       <li><a href="#">Analysis</a></li>
@@ -172,23 +219,35 @@
     <form id="search-form" class="search-widget" role="search" aria-label="Search Senedd Constituency">
       <input type="text" id="postcode" name="postcode" placeholder="Enter postcode" aria-label="Postcode" required />
       <button type="submit" aria-label="Look up postcode">Look up</button>
+      <button type="button" class="current-location-btn" title="Use current location" aria-label="Use current location">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="12" r="8" stroke="#006473" stroke-width="2" fill="none" />
+          <circle cx="12" cy="12" r="4" fill="#006473" />
+        </svg>
+      </button>
     </form>
   </nav>
 
   <div class="container wales-decides-container" aria-live="polite">
     <h2>Wales Decides</h2>
-    <p>Welcome to the 2026 Senedd Constituency lookup tool. Enter your postcode above to find your constituency and related info.</p>
+    <p>
+      Welcome to the 2026 Senedd Constituency lookup tool. This platform is designed to help you find detailed information about your Senedd constituency ahead of the upcoming elections. Simply enter your postcode above or use your current location to begin.
+    </p>
   </div>
 
   <div class="container constituency-container" aria-live="polite">
     <h2>Your Constituency</h2>
     <h3 id="constituency-name">Please enter your postcode above</h3>
-    <p id="constituency-info">Constituency details will appear here once you perform a search.</p>
+    <p id="constituency-info">
+      Once you have searched, detailed information about your constituency will appear here, including representatives, recent election results, and key local issues.
+    </p>
   </div>
 
   <div class="container news-videos-container">
     <h2>Latest News and Videos</h2>
-    <p>Stay tuned for the latest updates, analysis, and video coverage relevant to your constituency and Welsh politics.</p>
+    <p>
+      Stay updated with the latest news, in-depth analysis, and video coverage focused on Welsh politics and your local constituency. Explore stories, interviews, and reports as the election approaches.
+    </p>
   </div>
 
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
@@ -196,6 +255,7 @@
     const form = document.getElementById('search-form');
     const constituencyName = document.getElementById('constituency-name');
     const constituencyInfo = document.getElementById('constituency-info');
+    const currentLocationBtn = document.querySelector('.current-location-btn');
 
     let boundaries = null;
 
@@ -217,6 +277,27 @@
         return;
       }
 
+      lookupConstituencyByPostcode(postcode);
+    });
+
+    currentLocationBtn.addEventListener('click', () => {
+      constituencyName.textContent = 'Detecting location...';
+      constituencyInfo.textContent = '';
+
+      if (!navigator.geolocation) {
+        constituencyName.textContent = 'Geolocation not supported by your browser.';
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const { latitude, longitude } = position.coords;
+        findConstituencyByCoords(longitude, latitude);
+      }, () => {
+        constituencyName.textContent = 'Unable to retrieve your location.';
+      });
+    });
+
+    async function lookupConstituencyByPostcode(postcode) {
       constituencyName.textContent = 'Looking up constituency...';
       constituencyInfo.textContent = '';
 
@@ -232,23 +313,31 @@
           return;
         }
 
-        const { longitude, latitude } = data.result;
-        const userPoint = turf.point([longitude, latitude]);
-        const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
-
-        if (match) {
-          const constituency = match.properties.enw_cymrae;
-          constituencyName.textContent = constituency;
-          constituencyInfo.innerHTML = `Your 2026 Senedd constituency is <strong>${constituency}</strong>. <a href="cons/${constituency.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')}.html" style="color: var(--primary-color); text-decoration: underline;">More info</a>`;
-        } else {
-          constituencyName.textContent = 'Could not find your constituency.';
-          constituencyInfo.textContent = '';
-        }
+        findConstituencyByCoords(data.result.longitude, data.result.latitude);
       } catch (err) {
         constituencyName.textContent = 'Error looking up postcode. Please try again.';
         constituencyInfo.textContent = '';
       }
-    });
+    }
+
+    function findConstituencyByCoords(longitude, latitude) {
+      if (!boundaries) {
+        constituencyName.textContent = 'Constituency data not loaded.';
+        return;
+      }
+
+      const userPoint = turf.point([longitude, latitude]);
+      const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
+
+      if (match) {
+        const constituency = match.properties.enw_cymrae;
+        constituencyName.textContent = constituency;
+        constituencyInfo.innerHTML = `Your 2026 Senedd constituency is <strong>${constituency}</strong>. <a href="cons/${constituency.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')}.html" style="color: var(--primary-color); text-decoration: underline;">More info</a>`;
+      } else {
+        constituencyName.textContent = 'Could not find your constituency.';
+        constituencyInfo.textContent = '';
+      }
+    }
   </script>
 </body>
 </html>
