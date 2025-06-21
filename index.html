@@ -57,6 +57,7 @@
       cursor: pointer;
       width: 100%;
       transition: opacity 0.3s;
+      margin-bottom: 1rem;
     }
 
     button:hover {
@@ -114,6 +115,7 @@
     <form id="lookup-form">
       <label for="postcode">Enter your postcode:</label>
       <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
+      <button type="button" id="use-location">Use my current location</button>
       <button type="submit">Look up</button>
     </form>
 
@@ -129,6 +131,7 @@
     const resultDiv = document.getElementById('result');
     const progressContainer = document.getElementById('progress-container');
     const progressBar = document.getElementById('progress-bar');
+    const useLocationBtn = document.getElementById('use-location');
 
     let boundaries = null;
 
@@ -186,6 +189,43 @@
           resultDiv.innerText = 'Something went wrong. Please try again.';
         }, 2500);
       }
+    });
+
+    useLocationBtn.addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser.');
+        return;
+      }
+
+      resultDiv.innerText = '';
+      progressBar.style.width = '0%';
+      progressContainer.style.display = 'block';
+      progressBar.offsetHeight; // trigger reflow
+      progressBar.style.width = '100%';
+
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          // Reverse geocode coordinates to postcode
+          const res = await fetch(`https://api.postcodes.io/postcodes?lon=${longitude}&lat=${latitude}`);
+          const data = await res.json();
+
+          if (!data.result || data.result.length === 0) throw new Error('Could not find postcode');
+
+          const postcode = data.result[0].postcode;
+          document.getElementById('postcode').value = postcode;
+
+          // Trigger the form submit event programmatically
+          form.dispatchEvent(new Event('submit'));
+
+        } catch (err) {
+          progressContainer.style.display = 'none';
+          resultDiv.innerText = 'Could not find postcode from your location.';
+        }
+      }, (err) => {
+        progressContainer.style.display = 'none';
+        alert('Unable to retrieve your location.');
+      });
     });
   </script>
 </body>
