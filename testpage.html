@@ -1,218 +1,31 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MyNews</title>
-  <style>
-    :root {
-      --primary-color: #0057b8;
-      --dark-bg: #1c1c1c;
-      --light-grey: #f2f2f2;
-      --text-dark: #111;
-    }
+header {
+  background-color: var(--dark-bg);
+  color: white;
+  padding: 1rem 1.5rem;
+  position: relative;
+  height: 60px;
+}
 
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #fff;
-      color: var(--text-dark);
-    }
+.logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  position: absolute;
+  left: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
 
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 1.5rem;
-    }
+nav {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 1.5rem;
+}
 
-    header {
-      background-color: var(--dark-bg);
-      color: white;
-      padding: 1rem 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      flex-wrap: wrap;
-    }
-
-    .logo {
-      font-size: 1.5rem;
-      font-weight: bold;
-    }
-
-    nav a {
-      color: white;
-      text-decoration: none;
-      margin-left: 1rem;
-      font-size: 1rem;
-    }
-
-    .top-section {
-      display: grid;
-      grid-template-columns: 2fr 3fr;
-      gap: 1.5rem;
-      margin: 2rem 0;
-    }
-
-    .top-images {
-      display: grid;
-      grid-template-rows: 1fr 1fr;
-      gap: 0.5rem;
-    }
-
-    .top-images img:first-child {
-      grid-row: span 2;
-      height: 100%;
-    }
-
-    .top-images img {
-      width: 100%;
-      object-fit: cover;
-      aspect-ratio: 16 / 9;
-    }
-
-    .top-text h2 {
-      font-size: 1.8rem;
-      margin: 0 0 0.5rem;
-    }
-
-    .top-text p {
-      font-size: 1rem;
-      color: #444;
-      margin-bottom: 0.5rem;
-    }
-
-    .timestamp {
-      font-size: 0.9rem;
-      color: #666;
-      margin-bottom: 0.5rem;
-    }
-
-    .top-text ul {
-      list-style-type: disc;
-      padding-left: 1.2rem;
-      margin-top: 0.5rem;
-    }
-
-    .top-text ul li a {
-      color: var(--primary-color);
-      text-decoration: none;
-    }
-
-    .story-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .story-card {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .story-card img {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      object-fit: cover;
-      margin-bottom: 0.5rem;
-    }
-
-    .label {
-      font-size: 0.75rem;
-      font-weight: bold;
-      color: white;
-      background-color: #222;
-      display: inline-block;
-      padding: 2px 6px;
-      margin-bottom: 0.4rem;
-    }
-
-    .story-card h3 {
-      font-size: 1rem;
-      margin: 0.2rem 0;
-    }
-
-    .story-card p {
-      font-size: 0.9rem;
-      color: #444;
-      margin: 0.3rem 0;
-    }
-
-    .story-card .timestamp {
-      font-size: 0.8rem;
-      color: #888;
-      margin-top: auto;
-    }
-
-    footer {
-      text-align: center;
-      padding: 1rem;
-      background-color: #f9f9f9;
-      font-size: 0.85rem;
-      color: #777;
-    }
-  </style>
-</head>
-<body>
-
-  <header>
-    <div class="logo">MyNews</div>
-    <nav>
-      <a href="#">UK</a>
-      <a href="#">World</a>
-      <a href="#">Politics</a>
-      <a href="#">Entertainment</a>
-    </nav>
-  </header>
-
-  <div class="container">
-
-    <!-- Top Story Layout -->
-    <section class="top-section">
-      <div class="top-images">
-        <img src="https://via.placeholder.com/600x400" alt="Main image">
-      </div>
-      <div class="top-text">
-        <h2>Headline: Major Breaking News on Global Tensions</h2>
-        <p>Leaders respond after accusations of treaty violations just hours after signing. The international community is watching closely.</p>
-        <div class="timestamp">2 hours ago</div>
-        <ul>
-          <li><a href="#">What is the Strait of Hormuz and why is it important?</a></li>
-          <li><a href="#">Oil, conflict, and the global economic impact</a></li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- Story Cards -->
-    <section class="story-row">
-      <div class="story-card">
-        <img src="https://via.placeholder.com/300x200" alt="Story 1">
-        <h3>A war without winners: Complex regional battles</h3>
-        <p>The ceasefire may end the fighting, but tensions remain deeply rooted.</p>
-        <div class="timestamp">30 minutes ago</div>
-      </div>
-
-      <div class="story-card">
-        <img src="https://via.placeholder.com/300x200" alt="Story 2">
-        <h3>‘Cheshire Influencer’ pleads guilty in fraud case</h3>
-        <p>Luxury bag scheme cost victims thousands, say police.</p>
-        <div class="timestamp">45 minutes ago</div>
-      </div>
-
-      <div class="story-card">
-        <img src="https://via.placeholder.com/300x200" alt="Story 3">
-        <span class="label">EXCLUSIVE</span>
-        <h3>Flagship policy bill at risk ahead of major vote</h3>
-        <p>Critics warn of fallout from controversial welfare reforms.</p>
-        <div class="timestamp">2 hours ago</div>
-      </div>
-    </section>
-
-  </div>
-
-  <footer>
-    &copy; 2025 MyNews. Design for demonstration purposes.
-  </footer>
-
-</body>
-</html>
+nav a {
+  color: white;
+  text-decoration: none;
+  font-size: 1rem;
+}
