@@ -3,132 +3,177 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Example News Site</title>
+  <title>MyNews</title>
   <style>
+    :root {
+      --itv-blue: #0057b8;
+      --itv-dark: #1c1c1c;
+      --itv-grey: #f2f2f2;
+      --text-dark: #111;
+    }
+
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #f7f7f7;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background-color: #fff;
+      color: var(--text-dark);
     }
 
+    /* NAVIGATION */
     header {
-      background-color: #000;
-      color: #fff;
-      padding: 1rem 2rem;
+      background-color: var(--itv-dark);
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      padding: 1rem 2rem;
     }
 
-    header nav a {
-      color: #fff;
-      text-decoration: none;
-      margin: 0 1rem;
+    .logo {
       font-weight: bold;
+      font-size: 1.5rem;
+      color: white;
+      margin-right: 2rem;
     }
 
-    .hero {
-      background-image: url('https://via.placeholder.com/1600x600');
-      background-size: cover;
-      background-position: center;
+    nav a {
       color: white;
-      padding: 4rem 2rem;
-      text-shadow: 1px 1px 3px #000;
+      text-decoration: none;
+      margin-right: 1.5rem;
+      position: relative;
+      padding-bottom: 4px;
+      font-weight: 500;
+      font-size: 1rem;
+    }
+
+    nav a::after {
+      content: "";
+      position: absolute;
+      width: 0%;
+      height: 2px;
+      left: 0;
+      bottom: 0;
+      background-color: var(--itv-blue);
+      transition: width 0.3s ease;
+    }
+
+    nav a:hover::after {
+      width: 100%;
+    }
+
+    /* HERO SECTION */
+    .hero {
+      background-color: var(--itv-grey);
+      padding: 2rem;
+      border-bottom: 1px solid #ddd;
     }
 
     .hero h1 {
-      font-size: 3rem;
+      font-size: 2rem;
       margin: 0;
     }
 
+    /* ARTICLES GRID */
     .articles {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 1.5rem;
       padding: 2rem;
+      background-color: #fff;
     }
 
     .card {
-      background-color: white;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      transition: transform 0.2s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-4px);
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 1rem;
     }
 
     .card img {
       width: 100%;
-      height: 180px;
+      height: auto;
+      aspect-ratio: 16/9;
       object-fit: cover;
+      margin-bottom: 0.5rem;
     }
 
-    .card-content {
-      padding: 1rem;
+    .card h3 {
+      font-size: 1.1rem;
+      margin: 0.5rem 0 0.3rem;
+      font-weight: bold;
     }
 
-    .card-content h3 {
-      margin: 0.5rem 0;
-      font-size: 1.2rem;
+    .card p {
+      margin: 0;
+      color: #444;
+      font-size: 0.95rem;
     }
 
     footer {
-      background-color: #222;
-      color: #aaa;
+      background-color: #f9f9f9;
+      color: #666;
       text-align: center;
       padding: 1rem;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
+      border-top: 1px solid #ddd;
+    }
+
+    @media (max-width: 600px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      nav {
+        margin-top: 0.5rem;
+        display: flex;
+        flex-wrap: wrap;
+      }
+
+      nav a {
+        margin-bottom: 0.5rem;
+      }
     }
   </style>
 </head>
 <body>
 
   <header>
-    <div class="logo"><strong>MyNews</strong></div>
+    <div class="logo">MyNews</div>
     <nav>
       <a href="#">Home</a>
       <a href="#">UK</a>
       <a href="#">World</a>
       <a href="#">Politics</a>
-      <a href="#">Sports</a>
+      <a href="#">Entertainment</a>
+      <a href="#">Tech</a>
     </nav>
   </header>
 
   <section class="hero">
-    <h1>Breaking News: Example Headline Goes Here</h1>
+    <h1>Latest Headlines</h1>
   </section>
 
   <section class="articles">
     <div class="card">
-      <img src="https://via.placeholder.com/400x250" alt="News Thumbnail">
-      <div class="card-content">
-        <h3>Article Title One</h3>
-        <p>Brief description of the article to draw the reader in.</p>
-      </div>
+      <img src="https://via.placeholder.com/800x450" alt="News Image">
+      <h3>PM Faces New Pressure Over Policy U-Turn</h3>
+      <p>Critics say the government’s latest move contradicts promises made earlier this year.</p>
     </div>
 
     <div class="card">
-      <img src="https://via.placeholder.com/400x250" alt="News Thumbnail">
-      <div class="card-content">
-        <h3>Article Title Two</h3>
-        <p>Another news snippet summarised for quick reading.</p>
-      </div>
+      <img src="https://via.placeholder.com/800x450" alt="News Image">
+      <h3>Severe Weather Warning Issued for Coastal Areas</h3>
+      <p>Met Office issues amber warning as winds up to 80mph set to hit UK shores.</p>
     </div>
 
     <div class="card">
-      <img src="https://via.placeholder.com/400x250" alt="News Thumbnail">
-      <div class="card-content">
-        <h3>Article Title Three</h3>
-        <p>Short teaser to encourage click-through and engagement.</p>
-      </div>
+      <img src="https://via.placeholder.com/800x450" alt="News Image">
+      <h3>New Study Links Screen Time to Teen Sleep Issues</h3>
+      <p>Experts recommend reducing exposure to digital devices in the evening.</p>
     </div>
   </section>
 
   <footer>
-    &copy; 2025 MyNews. All rights reserved.
+    &copy; 2025 MyNews. Designed for educational use only. Not affiliated with ITV.
   </footer>
 
 </body>
