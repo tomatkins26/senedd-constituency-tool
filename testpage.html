@@ -6,9 +6,9 @@
   <title>MyNews</title>
   <style>
     :root {
-      --blue: #0057b8;
-      --dark: #1c1c1c;
-      --grey: #f2f2f2;
+      --primary-color: #0057b8;
+      --dark-bg: #1c1c1c;
+      --light-grey: #f2f2f2;
       --text-dark: #111;
     }
 
@@ -19,11 +19,17 @@
       color: var(--text-dark);
     }
 
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
     header {
-      background-color: var(--dark);
+      background-color: var(--dark-bg);
       display: flex;
       align-items: center;
-      padding: 1rem 2rem;
+      padding: 1rem 1.5rem;
       flex-wrap: wrap;
     }
 
@@ -56,7 +62,7 @@
       height: 2px;
       left: 0;
       bottom: 0;
-      background-color: var(--blue);
+      background-color: var(--primary-color);
       transition: width 0.3s ease;
     }
 
@@ -65,8 +71,8 @@
     }
 
     .hero {
-      background-color: var(--grey);
-      padding: 2rem;
+      background-color: var(--light-grey);
+      padding: 2rem 0;
       border-bottom: 1px solid #ddd;
     }
 
@@ -79,7 +85,7 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 1.5rem;
-      padding: 2rem;
+      padding: 2rem 0;
     }
 
     .card {
@@ -109,11 +115,9 @@
       font-size: 0.95rem;
     }
 
-    /* TOP STORY */
     .top-story {
       grid-column: 1 / -1;
       background-color: #fff;
-      border-bottom: 2px solid #ccc;
       display: flex;
       flex-direction: column;
     }
@@ -127,7 +131,7 @@
     }
 
     .top-story h2 {
-      font-size: 1.8rem;
+      font-size: 1.6rem;
       margin: 0 0 0.5rem;
     }
 
@@ -140,7 +144,7 @@
       background-color: #f9f9f9;
       color: #666;
       text-align: center;
-      padding: 1rem;
+      padding: 1rem 1.5rem;
       font-size: 0.85rem;
       border-top: 1px solid #ddd;
     }
@@ -170,37 +174,39 @@
     </nav>
   </header>
 
-  <section class="hero">
-    <h1>Latest Headlines</h1>
-  </section>
+  <div class="container">
+    <section class="hero">
+      <h1>Latest Headlines</h1>
+    </section>
 
-  <section class="articles">
-    <!-- Top Story -->
-    <div class="top-story">
-      <img src="https://via.placeholder.com/1200x500" alt="Top Story">
-      <h2>Major Development in Ongoing Political Crisis</h2>
-      <p>In a dramatic shift, senior officials are calling for immediate reforms after a leaked report sparks national debate.</p>
-    </div>
+    <section class="articles">
+      <!-- Top Story -->
+      <div class="top-story">
+        <img src="https://via.placeholder.com/1200x500" alt="Top Story">
+        <h2>Major Development in Ongoing Political Crisis</h2>
+        <p>In a dramatic shift, senior officials are calling for immediate reforms after a leaked report sparks national debate.</p>
+      </div>
 
-    <!-- Regular Articles -->
-    <div class="card">
-      <img src="https://via.placeholder.com/800x450" alt="News Image">
-      <h3>PM Faces New Pressure Over Policy U-Turn</h3>
-      <p>Critics say the government’s latest move contradicts promises made earlier this year.</p>
-    </div>
+      <!-- Regular Articles -->
+      <div class="card">
+        <img src="https://via.placeholder.com/800x450" alt="News Image">
+        <h3>PM Faces New Pressure Over Policy U-Turn</h3>
+        <p>Critics say the government’s latest move contradicts promises made earlier this year.</p>
+      </div>
 
-    <div class="card">
-      <img src="https://via.placeholder.com/800x450" alt="News Image">
-      <h3>Severe Weather Warning Issued for Coastal Areas</h3>
-      <p>Met Office issues amber warning as winds up to 80mph set to hit UK shores.</p>
-    </div>
+      <div class="card">
+        <img src="https://via.placeholder.com/800x450" alt="News Image">
+        <h3>Severe Weather Warning Issued for Coastal Areas</h3>
+        <p>Met Office issues amber warning as winds up to 80mph set to hit UK shores.</p>
+      </div>
 
-    <div class="card">
-      <img src="https://via.placeholder.com/800x450" alt="News Image">
-      <h3>New Study Links Screen Time to Teen Sleep Issues</h3>
-      <p>Experts recommend reducing exposure to digital devices in the evening.</p>
-    </div>
-  </section>
+      <div class="card">
+        <img src="https://via.placeholder.com/800x450" alt="News Image">
+        <h3>New Study Links Screen Time to Teen Sleep Issues</h3>
+        <p>Experts recommend reducing exposure to digital devices in the evening.</p>
+      </div>
+    </section>
+  </div>
 
   <footer>
     &copy; 2025 MyNews. Designed for educational use only.
