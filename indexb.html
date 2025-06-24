@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Find Your 2026 Senedd Constituency</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: 'Public Sans', sans-serif;
+      background-color: #E5EFF1;
+      color: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 1rem;
+    }
+
+    .container {
+      background: #fff;
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    h2 {
+      color: #006473;
+      margin-bottom: 1.5rem;
+    }
+
+    .postcode-wrapper {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+
+    .postcode-wrapper input[type="text"] {
+      width: 100%;
+      padding: 0.75rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+      outline: none;
+    }
+
+    button[type="submit"] {
+      background-color: #006473;
+      color: #fff;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      transition: opacity 0.3s;
+    }
+
+    button[type="submit"]:hover {
+      opacity: 0.85;
+    }
+
+    #result {
+      margin-top: 1.5rem;
+      font-weight: bold;
+    }
+
+    .const-name {
+      color: #006473;
+      text-decoration: none;
+    }
+
+    .const-name:hover {
+      text-decoration: underline;
+    }
+
+    .progress-container {
+      height: 6px;
+      background-color: #ddd;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 1rem;
+      display: none;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background-color: #006473;
+      width: 0%;
+      transition: width 2.5s linear;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.7rem;
+      color: #999;
+      padding: 0.5rem 0;
+      width: 100%;
+      background: transparent;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Find Your 2026 Senedd Constituency</h2>
+    <form id="lookup-form">
+      <label for="postcode">Enter your full address or postcode:</label>
+      <div class="postcode-wrapper">
+        <input type="text" id="postcode" placeholder="e.g. 10 Downing Street, LL56 4QF" required />
+      </div>
+      <button type="submit">Look up</button>
+    </form>
+
+    <div class="progress-container" id="progress-container">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div id="result"></div>
+  </div>
+
+  <footer>
+    Data from Senedd Cymru/Welsh Parliament and Ordnance Survey
+  </footer>
+
+  <script>
+    const form = document.getElementById('lookup-form');
+    const resultDiv = document.getElementById('result');
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
+
+    let boundaries = null;
+
+    fetch('senedd2026.json')
+      .then(res => res.json())
+      .then(data => boundaries = data)
+      .catch(err => resultDiv.innerText = 'Error loading constituency data.');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const query = document.getElementById('postcode').value.trim();
+      resultDiv.innerText = '';
+      progressBar.style.width = '0%';
+      progressContainer.style.display = 'block';
+      progressBar.offsetHeight; // trigger reflow
+      progressBar.style.width = '100%';
+
+      try {
+        const apiKey = 'NytAvjGLRrSZkAZRGIiGhGNzDA63diQk';
+        const response = await fetch(`https://api.os.uk/search/places/v1/find?query=${encodeURIComponent(query)}&key=${apiKey}`);
+        const data = await response.json();
+
+        if (!data.results || data.results.length === 0) {
+          throw new Error('Address not found');
+        }
+
+        const first = data.results[0].GAZETTEER_ENTRY;
+        const lon = parseFloat(first.LNG_LABEL);
+        const lat = parseFloat(first.LAT_LABEL);
+        const userPoint = turf.point([lon, lat]);
+
+        const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
+
+        setTimeout(() => {
+          progressContainer.style.display = 'none';
+          if (match) {
+            const slug = match.properties.enw_cymrae
+              .toLowerCase()
+              .replace(/\s+/g, '-')
+              .replace(/[^\w-]/g, '');
+            const url = `cons/${slug}.html`;
+
+            resultDiv.innerHTML = `Your 2026 Senedd constituency is: <a href="${url}" class="const-name">${match.properties.enw_cymrae}</a>`;
+          } else {
+            resultDiv.innerText = 'Could not find your constituency.';
+          }
+        }, 2500);
+      } catch (err) {
+        console.error(err);
+        setTimeout(() => {
+          progressContainer.style.display = 'none';
+          resultDiv.innerText = 'Something went wrong. Please try again.';
+        }, 2500);
+      }
+    });
+  </script>
+</body>
+</html>
