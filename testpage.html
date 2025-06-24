@@ -14,7 +14,7 @@
 
     body {
       margin: 0;
-      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-family: Arial, sans-serif;
       background-color: #fff;
       color: var(--text-dark);
     }
@@ -27,136 +27,129 @@
 
     header {
       background-color: var(--dark-bg);
-      display: flex;
-      align-items: center;
+      color: white;
       padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
       flex-wrap: wrap;
     }
 
     .logo {
-      font-weight: bold;
       font-size: 1.5rem;
-      color: white;
-      margin-right: 2rem;
-    }
-
-    nav {
-      display: flex;
-      flex-wrap: wrap;
+      font-weight: bold;
     }
 
     nav a {
       color: white;
       text-decoration: none;
-      margin-right: 1.5rem;
-      position: relative;
-      padding-bottom: 4px;
-      font-weight: 500;
+      margin-left: 1rem;
       font-size: 1rem;
     }
 
-    nav a::after {
-      content: "";
-      position: absolute;
-      width: 0%;
-      height: 2px;
-      left: 0;
-      bottom: 0;
-      background-color: var(--primary-color);
-      transition: width 0.3s ease;
+    .top-section {
+      display: grid;
+      grid-template-columns: 2fr 3fr;
+      gap: 1.5rem;
+      margin: 2rem 0;
     }
 
-    nav a:hover::after {
+    .top-images {
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      gap: 0.5rem;
+    }
+
+    .top-images img:first-child {
+      grid-row: span 2;
+      height: 100%;
+    }
+
+    .top-images img {
       width: 100%;
+      object-fit: cover;
+      aspect-ratio: 16 / 9;
     }
 
-    .hero {
-      background-color: var(--light-grey);
-      padding: 2rem 0;
-      border-bottom: 1px solid #ddd;
+    .top-text h2 {
+      font-size: 1.8rem;
+      margin: 0 0 0.5rem;
     }
 
-    .hero h1 {
-      font-size: 2rem;
-      margin: 0;
+    .top-text p {
+      font-size: 1rem;
+      color: #444;
+      margin-bottom: 0.5rem;
     }
 
-    .articles {
+    .timestamp {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 0.5rem;
+    }
+
+    .top-text ul {
+      list-style-type: disc;
+      padding-left: 1.2rem;
+      margin-top: 0.5rem;
+    }
+
+    .top-text ul li a {
+      color: var(--primary-color);
+      text-decoration: none;
+    }
+
+    .story-row {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 1.5rem;
-      padding: 2rem 0;
+      margin-bottom: 2rem;
     }
 
-    .card {
+    .story-card {
       display: flex;
       flex-direction: column;
-      border-bottom: 1px solid #ddd;
-      padding-bottom: 1rem;
     }
 
-    .card img {
+    .story-card img {
       width: 100%;
-      height: auto;
-      aspect-ratio: 16/9;
+      aspect-ratio: 16 / 9;
       object-fit: cover;
       margin-bottom: 0.5rem;
     }
 
-    .card h3 {
-      font-size: 1.1rem;
-      margin: 0.5rem 0 0.3rem;
+    .label {
+      font-size: 0.75rem;
       font-weight: bold;
+      color: white;
+      background-color: #222;
+      display: inline-block;
+      padding: 2px 6px;
+      margin-bottom: 0.4rem;
     }
 
-    .card p {
-      margin: 0;
-      color: #444;
-      font-size: 0.95rem;
-    }
-
-    .top-story {
-      grid-column: 1 / -1;
-      background-color: #fff;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .top-story img {
-      width: 100%;
-      height: auto;
-      aspect-ratio: 16/7;
-      object-fit: cover;
-      margin-bottom: 1rem;
-    }
-
-    .top-story h2 {
-      font-size: 1.6rem;
-      margin: 0 0 0.5rem;
-    }
-
-    .top-story p {
+    .story-card h3 {
       font-size: 1rem;
+      margin: 0.2rem 0;
+    }
+
+    .story-card p {
+      font-size: 0.9rem;
       color: #444;
+      margin: 0.3rem 0;
+    }
+
+    .story-card .timestamp {
+      font-size: 0.8rem;
+      color: #888;
+      margin-top: auto;
     }
 
     footer {
-      background-color: #f9f9f9;
-      color: #666;
       text-align: center;
-      padding: 1rem 1.5rem;
+      padding: 1rem;
+      background-color: #f9f9f9;
       font-size: 0.85rem;
-      border-top: 1px solid #ddd;
-    }
-
-    @media (max-width: 600px) {
-      .top-story h2 {
-        font-size: 1.4rem;
-      }
-
-      .top-story img {
-        aspect-ratio: 16/9;
-      }
+      color: #777;
     }
   </style>
 </head>
@@ -165,51 +158,60 @@
   <header>
     <div class="logo">MyNews</div>
     <nav>
-      <a href="#">Home</a>
       <a href="#">UK</a>
       <a href="#">World</a>
       <a href="#">Politics</a>
       <a href="#">Entertainment</a>
-      <a href="#">Tech</a>
     </nav>
   </header>
 
   <div class="container">
-    <section class="hero">
-      <h1>Latest Headlines</h1>
-    </section>
 
-    <section class="articles">
-      <!-- Top Story -->
-      <div class="top-story">
-        <img src="https://via.placeholder.com/1200x500" alt="Top Story">
-        <h2>Major Development in Ongoing Political Crisis</h2>
-        <p>In a dramatic shift, senior officials are calling for immediate reforms after a leaked report sparks national debate.</p>
+    <!-- Top Story Layout -->
+    <section class="top-section">
+      <div class="top-images">
+        <img src="https://via.placeholder.com/600x400" alt="Main image">
       </div>
-
-      <!-- Regular Articles -->
-      <div class="card">
-        <img src="https://via.placeholder.com/800x450" alt="News Image">
-        <h3>PM Faces New Pressure Over Policy U-Turn</h3>
-        <p>Critics say the government’s latest move contradicts promises made earlier this year.</p>
-      </div>
-
-      <div class="card">
-        <img src="https://via.placeholder.com/800x450" alt="News Image">
-        <h3>Severe Weather Warning Issued for Coastal Areas</h3>
-        <p>Met Office issues amber warning as winds up to 80mph set to hit UK shores.</p>
-      </div>
-
-      <div class="card">
-        <img src="https://via.placeholder.com/800x450" alt="News Image">
-        <h3>New Study Links Screen Time to Teen Sleep Issues</h3>
-        <p>Experts recommend reducing exposure to digital devices in the evening.</p>
+      <div class="top-text">
+        <h2>Headline: Major Breaking News on Global Tensions</h2>
+        <p>Leaders respond after accusations of treaty violations just hours after signing. The international community is watching closely.</p>
+        <div class="timestamp">2 hours ago</div>
+        <ul>
+          <li><a href="#">What is the Strait of Hormuz and why is it important?</a></li>
+          <li><a href="#">Oil, conflict, and the global economic impact</a></li>
+        </ul>
       </div>
     </section>
+
+    <!-- Story Cards -->
+    <section class="story-row">
+      <div class="story-card">
+        <img src="https://via.placeholder.com/300x200" alt="Story 1">
+        <h3>A war without winners: Complex regional battles</h3>
+        <p>The ceasefire may end the fighting, but tensions remain deeply rooted.</p>
+        <div class="timestamp">30 minutes ago</div>
+      </div>
+
+      <div class="story-card">
+        <img src="https://via.placeholder.com/300x200" alt="Story 2">
+        <h3>‘Cheshire Influencer’ pleads guilty in fraud case</h3>
+        <p>Luxury bag scheme cost victims thousands, say police.</p>
+        <div class="timestamp">45 minutes ago</div>
+      </div>
+
+      <div class="story-card">
+        <img src="https://via.placeholder.com/300x200" alt="Story 3">
+        <span class="label">EXCLUSIVE</span>
+        <h3>Flagship policy bill at risk ahead of major vote</h3>
+        <p>Critics warn of fallout from controversial welfare reforms.</p>
+        <div class="timestamp">2 hours ago</div>
+      </div>
+    </section>
+
   </div>
 
   <footer>
-    &copy; 2025 MyNews. Designed for educational use only.
+    &copy; 2025 MyNews. Design for demonstration purposes.
   </footer>
 
 </body>
