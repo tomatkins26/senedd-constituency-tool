@@ -31,30 +31,71 @@
       padding: 1rem 1.5rem;
       position: relative;
       height: 60px;
+      display: flex; /* added for layout */
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
     }
 
     .logo {
       font-size: 1.5rem;
       font-weight: bold;
-      position: absolute;
-      left: 1.5rem;
-      top: 50%;
-      transform: translateY(-50%);
+      /* changed from absolute to static for flex layout */
+      position: static;
+      transform: none;
     }
 
     nav {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      /* removed absolute positioning to work in flex layout */
       display: flex;
       gap: 1.5rem;
+      flex-grow: 1;
+      justify-content: center;
     }
 
     nav a {
       color: white;
       text-decoration: none;
       font-size: 1rem;
+    }
+
+    /* New styling for the postcode lookup form */
+    #lookup-form {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    #lookup-form input {
+      padding: 0.3rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      width: 120px;
+    }
+
+    #lookup-form button {
+      background-color: var(--primary-color);
+      border: none;
+      color: white;
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.3s ease;
+    }
+
+    #lookup-form button:disabled {
+      background-color: #333;
+      cursor: not-allowed;
+    }
+
+    /* Inline message area for errors or status */
+    #message {
+      color: #ff4136; /* red */
+      font-size: 0.9rem;
+      margin-left: 1rem;
+      min-width: 180px;
     }
 
     .top-section {
@@ -174,6 +215,13 @@
       <a href="#">Politics</a>
       <a href="#">Entertainment</a>
     </nav>
+
+    <!-- Added postcode lookup form -->
+    <form id="lookup-form" novalidate>
+      <input type="text" id="postcode" placeholder="Enter postcode" required aria-label="Enter postcode" />
+      <button type="submit">Find MP</button>
+      <div id="message" role="alert" aria-live="polite"></div> <!-- inline message -->
+    </form>
   </header>
 
   <div class="container">
@@ -184,12 +232,13 @@
         <img src="https://via.placeholder.com/600x400" alt="Main image">
       </div>
       <div class="top-text">
-        <h2>Headline: Major Breaking News on Global Tensions</h2>
-        <p>Leaders respond after accusations of treaty violations just hours after signing. The international community is watching closely.</p>
-        <div class="timestamp">2 hours ago</div>
+        <!-- Added IDs for dynamic update -->
+        <h2 id="top-headline">Headline: Major Breaking News on Global Tensions</h2>
+        <p id="top-summary">Leaders respond after accusations of treaty violations just hours after signing. The international community is watching closely.</p>
+        <div class="timestamp" id="top-timestamp">2 hours ago</div>
         <ul>
-          <li><a href="#">What is the Strait of Hormuz and why is it important?</a></li>
-          <li><a href="#">Oil, conflict, and the global economic impact</a></li>
+          <li><a href="#" id="top-link-1">What is the Strait of Hormuz and why is it important?</a></li>
+          <li><a href="#" id="top-link-2">Oil, conflict, and the global economic impact</a></li>
         </ul>
       </div>
     </section>
@@ -225,5 +274,56 @@
     &copy; 2025 MyNews. Design for demonstration purposes.
   </footer>
 
-</body>
-</html>
+  <script>
+    const storiesByConstituency = {
+      "Cardiff Central": {
+        headline: "Cardiff Central Faces Cost-of-Living Crisis",
+        summary: "Residents say wages are not keeping pace with rising costs. The MP has called for urgent intervention.",
+        timestamp: "Just now",
+        link1: { text: "MP's cost-of-living report", href: "#" },
+        link2: { text: "What this means for Wales", href: "#" }
+      },
+      "Hackney South and Shoreditch": {
+        headline: "Tech Boom in Hackney South Raises Housing Concerns",
+        summary: "Innovation is soaring, but locals fear being priced out of their homes.",
+        timestamp: "15 minutes ago",
+        link1: { text: "MP's stance on development", href: "#" },
+        link2: { text: "Can tech and community coexist?", href: "#" }
+      }
+      // Add more as needed
+    };
+
+    document.getElementById("lookup-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const button = form.querySelector('button');
+      const message = document.getElementById('message');
+      const postcodeInput = document.getElementById("postcode");
+      let postcode = postcodeInput.value.trim().toUpperCase().replace(/\s+/g, '');
+
+      message.textContent = ""; // clear previous messages
+      if (!postcode) {
+        message.textContent = "Please enter a valid postcode.";
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = 'Loading...';
+
+      try {
+        const res = await fetch(`https://api.postcodes.io/postcodes/${postcode}`);
+        const data = await res.json();
+
+        if (!data.result || !data.result.parliamentary_constituency) {
+          message.textContent = "Constituency not found.";
+          return;
+        }
+
+        const constituency = data.result.parliamentary_constituency;
+        const story = storiesByConstituency[constituency];
+
+        if (story) {
+          document.getElementById("top-headline").textContent = story.headline;
+          document.getElementById("top-summary").textContent = story.summary;
+          document.getElementById("top-timestamp").textContent = story.timestamp;
+          document.getElementById("top-link-1").
