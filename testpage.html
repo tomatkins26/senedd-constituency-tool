@@ -6,9 +6,9 @@
   <title>MyNews</title>
   <style>
     :root {
-      --itv-blue: #0057b8;
-      --itv-dark: #1c1c1c;
-      --itv-grey: #f2f2f2;
+      --blue: #0057b8;
+      --dark: #1c1c1c;
+      --grey: #f2f2f2;
       --text-dark: #111;
     }
 
@@ -19,12 +19,12 @@
       color: var(--text-dark);
     }
 
-    /* NAVIGATION */
     header {
-      background-color: var(--itv-dark);
+      background-color: var(--dark);
       display: flex;
       align-items: center;
       padding: 1rem 2rem;
+      flex-wrap: wrap;
     }
 
     .logo {
@@ -32,6 +32,11 @@
       font-size: 1.5rem;
       color: white;
       margin-right: 2rem;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
     }
 
     nav a {
@@ -51,7 +56,7 @@
       height: 2px;
       left: 0;
       bottom: 0;
-      background-color: var(--itv-blue);
+      background-color: var(--blue);
       transition: width 0.3s ease;
     }
 
@@ -59,9 +64,8 @@
       width: 100%;
     }
 
-    /* HERO SECTION */
     .hero {
-      background-color: var(--itv-grey);
+      background-color: var(--grey);
       padding: 2rem;
       border-bottom: 1px solid #ddd;
     }
@@ -71,13 +75,11 @@
       margin: 0;
     }
 
-    /* ARTICLES GRID */
     .articles {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 1.5rem;
       padding: 2rem;
-      background-color: #fff;
     }
 
     .card {
@@ -107,6 +109,33 @@
       font-size: 0.95rem;
     }
 
+    /* TOP STORY */
+    .top-story {
+      grid-column: 1 / -1;
+      background-color: #fff;
+      border-bottom: 2px solid #ccc;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-story img {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16/7;
+      object-fit: cover;
+      margin-bottom: 1rem;
+    }
+
+    .top-story h2 {
+      font-size: 1.8rem;
+      margin: 0 0 0.5rem;
+    }
+
+    .top-story p {
+      font-size: 1rem;
+      color: #444;
+    }
+
     footer {
       background-color: #f9f9f9;
       color: #666;
@@ -117,19 +146,12 @@
     }
 
     @media (max-width: 600px) {
-      header {
-        flex-direction: column;
-        align-items: flex-start;
+      .top-story h2 {
+        font-size: 1.4rem;
       }
 
-      nav {
-        margin-top: 0.5rem;
-        display: flex;
-        flex-wrap: wrap;
-      }
-
-      nav a {
-        margin-bottom: 0.5rem;
+      .top-story img {
+        aspect-ratio: 16/9;
       }
     }
   </style>
@@ -153,6 +175,14 @@
   </section>
 
   <section class="articles">
+    <!-- Top Story -->
+    <div class="top-story">
+      <img src="https://via.placeholder.com/1200x500" alt="Top Story">
+      <h2>Major Development in Ongoing Political Crisis</h2>
+      <p>In a dramatic shift, senior officials are calling for immediate reforms after a leaked report sparks national debate.</p>
+    </div>
+
+    <!-- Regular Articles -->
     <div class="card">
       <img src="https://via.placeholder.com/800x450" alt="News Image">
       <h3>PM Faces New Pressure Over Policy U-Turn</h3>
@@ -173,7 +203,7 @@
   </section>
 
   <footer>
-    &copy; 2025 MyNews. Designed for educational use only. Not affiliated with ITV.
+    &copy; 2025 MyNews. Designed for educational use only.
   </footer>
 
 </body>
