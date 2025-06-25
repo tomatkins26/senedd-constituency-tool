@@ -164,7 +164,7 @@
 
       resultDiv.innerText = 'Improving precision using your address...';
       try {
-        const res = await fetch(`https://api.getaddress.io/find/${postcodeValue}/${encodeURIComponent(line)}?api-key=YOUR_API_KEY_HERE`);
+        const res = await fetch(`https://api.getaddress.io/find/${postcodeValue}/${encodeURIComponent(line)}?api-key=bIFf8Sc6M0WyEvHy31Vguw46656`);
         const data = await res.json();
 
         if (!data || !data.addresses || data.addresses.length === 0) {
