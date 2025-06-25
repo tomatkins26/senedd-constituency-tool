@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css" />
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
   <style>
-    /* Additional styles for fallback UI */
+    /* Styles for fallback UI */
     #address-section {
       margin-top: 1rem;
       opacity: 0;
@@ -15,18 +15,15 @@
       overflow: hidden;
       transition: opacity 0.4s ease, max-height 0.4s ease;
     }
-
     #address-section.visible {
       opacity: 1;
       max-height: 300px;
     }
-
     #address-section input,
     #address-section button {
       margin-top: 0.75rem;
       font-size: 1rem;
     }
-
     #address-section input {
       width: 100%;
       padding: 0.75rem;
@@ -34,7 +31,6 @@
       border: 1px solid #ccc;
       box-sizing: border-box;
     }
-
     #address-section button {
       width: 100%;
       padding: 0.75rem;
@@ -45,45 +41,56 @@
       cursor: pointer;
       transition: opacity 0.3s;
     }
-
     #address-section button:hover {
       opacity: 0.85;
     }
-
     #address-warning {
       margin-top: 0.5rem;
       font-size: 0.8rem;
       color: #cc0000;
+    }
+    .progress-container {
+      background: #eee;
+      border-radius: 6px;
+      margin: 1rem 0;
+      height: 10px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background-color: #006473;
+      transition: width 0.2s ease;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Find Your 2026 Senedd Constituency</h2>
-    <form id="lookup-form">
+    <form id="lookup-form" aria-label="Senedd constituency lookup form">
       <label for="postcode">Enter your postcode:</label>
-      <div class="postcode-wrapper">
-        <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
+      <div class="postcode-wrapper" style="display:flex; gap:0.5rem; align-items:center;">
+        <input type="text" id="postcode" name="postcode" placeholder="e.g. CF99 1SN" required aria-required="true" />
         <button type="button" id="use-location" class="icon-button" title="Use my current location" aria-label="Use my current location">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
           </svg>
         </button>
       </div>
-      <button type="submit">Look up</button>
+      <button type="submit" style="margin-top:1rem;">Look up</button>
     </form>
 
-    <div id="address-section">
+    <section id="address-section" aria-live="polite" aria-hidden="true">
       <div id="address-warning">You're near a boundary. Please enter your address line for better accuracy:</div>
-      <input type="text" id="address-line" placeholder="e.g. 10 Queen Street" />
+      <input type="text" id="address-line" placeholder="e.g. 10 Queen Street" aria-label="Address line" />
       <button id="address-submit" type="button">Submit Address</button>
-    </div>
+    </section>
 
-    <div class="progress-container" id="progress-container" style="display:none;">
+    <div class="progress-container" id="progress-container" aria-hidden="true" style="display:none;">
       <div class="progress-bar" id="progress-bar"></div>
     </div>
 
-    <div id="result"></div>
+    <div id="result" role="region" aria-live="polite" style="margin-top:1rem;"></div>
   </div>
 
   <footer>
@@ -91,215 +98,282 @@
     <div id="info-text" style="opacity:0; height:0; overflow:hidden; transition: all 0.3s ease;">
       The location and/or postcode you provide are only used to identify your 2026 Senedd constituency. They are not saved, tracked or shared.
     </div>
-    <button id="toggle-info-btn"><span>Privacy information</span></button>
+    <button id="toggle-info-btn" aria-expanded="false" aria-controls="info-text" style="margin-top:1rem;">
+      <span>Privacy information</span>
+    </button>
   </footer>
 
   <script>
     const form = document.getElementById('lookup-form');
+    const postcodeInput = document.getElementById('postcode');
+    const useLocationBtn = document.getElementById('use-location');
     const resultDiv = document.getElementById('result');
     const progressContainer = document.getElementById('progress-container');
     const progressBar = document.getElementById('progress-bar');
-    const useLocationBtn = document.getElementById('use-location');
     const addressSection = document.getElementById('address-section');
     const addressInput = document.getElementById('address-line');
     const addressSubmit = document.getElementById('address-submit');
+    const infoText = document.getElementById('info-text');
+    const toggleInfoBtn = document.getElementById('toggle-info-btn');
+
     let boundaries = null;
-    let lastPostcodeCoords = null;
+    let progressInterval = null;
 
     // Load boundaries GeoJSON
-    fetch('senedd2026.json')
-      .then(res => res.json())
-      .then(data => boundaries = data)
-      .catch(err => (resultDiv.innerText = 'Error loading constituency data.'));
+    async function loadBoundaries() {
+      try {
+        const res = await fetch('senedd2026.json');
+        boundaries = await res.json();
+      } catch (err) {
+        resultDiv.textContent = 'Error loading constituency data.';
+        console.error(err);
+      }
+    }
+    loadBoundaries();
 
+    // Progress bar helpers
     function startProgress() {
       progressContainer.style.display = 'block';
+      progressContainer.setAttribute('aria-hidden', 'false');
       progressBar.style.width = '0%';
       let width = 0;
-      const interval = setInterval(() => {
-        if (width >= 90) {
-          clearInterval(interval);
-          return;
+      progressInterval = setInterval(() => {
+        if (width >= 90) clearInterval(progressInterval);
+        else {
+          width += 10;
+          progressBar.style.width = width + '%';
         }
-        width += 10;
-        progressBar.style.width = width + '%';
       }, 100);
-      return interval;
     }
 
     function stopProgress(message) {
+      clearInterval(progressInterval);
       progressBar.style.width = '100%';
       setTimeout(() => {
         progressContainer.style.display = 'none';
+        progressContainer.setAttribute('aria-hidden', 'true');
         progressBar.style.width = '0%';
         if (message) {
-          resultDiv.innerText = message;
+          resultDiv.textContent = message;
         }
       }, 300);
     }
 
+    // Show / hide address fallback input
     function showAddressFallback() {
       addressSection.classList.add('visible');
+      addressSection.setAttribute('aria-hidden', 'false');
     }
-
     function hideAddressFallback() {
       addressSection.classList.remove('visible');
+      addressSection.setAttribute('aria-hidden', 'true');
       addressInput.value = '';
     }
 
+    // Display constituency name using enw_cymrae property
     function renderConstituency(feature) {
       stopProgress();
-      resultDiv.innerHTML = `<h3>Your constituency is:</h3><p><strong>${feature.properties.PCON21NM}</strong></p>`;
+      if (!feature || !feature.properties) {
+        resultDiv.textContent = 'Could not find your constituency.';
+        return;
+      }
+      const name = feature.properties.enw_cymrae || 'Unknown Constituency';
+      resultDiv.innerHTML = `<h3>Your constituency is:</h3><p><strong>${name}</strong></p>`;
       hideAddressFallback();
     }
 
+    // Check if point is near boundary (within threshold in km)
+    function isNearBoundary(feature, point, thresholdKm = 1) {
+      try {
+        const coords = turf.getCoords(feature.geometry)[0]; // Outer ring
+        const nearest = turf.nearestPointOnLine(turf.lineString(coords), point);
+        const dist = turf.distance(point, nearest, { units: 'kilometers' });
+        return dist <= thresholdKm;
+      } catch {
+        return false;
+      }
+    }
+
+    // Clean address line for geocoding
+    function cleanAddressLine(rawAddress, postcode) {
+      let cleaned = rawAddress.replace(/,/g, '');
+      const postcodePattern = new RegExp(postcode.replace(/\s+/g, ''), 'i');
+      return cleaned.replace(postcodePattern, '').trim();
+    }
+
+    // Handle postcode form submit
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const postcode = document.getElementById('postcode').value.trim();
+      const postcode = postcodeInput.value.trim();
       if (!postcode) return;
 
-      resultDiv.innerText = '';
+      resultDiv.textContent = '';
       hideAddressFallback();
-      const interval = startProgress();
+      startProgress();
 
       try {
         const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
         const data = await res.json();
-        clearInterval(interval);
 
-        if (!data.result) {
-          stopProgress('Invalid postcode.');
+        if (data.status !== 200 || !data.result) {
+          stopProgress('Postcode not found.');
           return;
         }
 
-        const { longitude, latitude, country } = data.result;
+        const { latitude, longitude } = data.result;
+        const userPoint = turf.point([longitude, latitude]);
 
-        if (country !== 'Wales') {
-          stopProgress('This tool only supports Welsh postcodes.');
+        if (!boundaries) {
+          stopProgress('Constituency data not loaded.');
           return;
         }
 
-        lastPostcodeCoords = [longitude, latitude];
-        const userPoint = turf.point(lastPostcodeCoords);
-        const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
+        let matchedFeature = null;
+        let nearBoundary = false;
 
-        if (match) {
-          // Check if user near boundary (within 1 km)
-          const coords = turf.getCoords(match.geometry)[0]; // Outer ring of polygon
-          const nearest = turf.nearestPointOnLine(turf.lineString(coords), userPoint);
-          const dist = turf.distance(userPoint, nearest, { units: 'kilometers' });
-
-          if (dist <= 1) {
-            showAddressFallback();
-            stopProgress();
-          } else {
-            renderConstituency(match);
+        for (const feature of boundaries.features) {
+          if (turf.booleanPointInPolygon(userPoint, feature)) {
+            matchedFeature = feature;
+            nearBoundary = isNearBoundary(feature, userPoint, 1);
+            break;
           }
-        } else {
-          stopProgress('Could not find your constituency.');
         }
-      } catch (err) {
-        clearInterval(interval);
-        console.error(err);
-        stopProgress('Something went wrong. Please try again.');
-      }
-    });
 
-    // Clean address line for lookup
-    function cleanAddressLine(rawAddressLine, postcode) {
-      let cleaned = rawAddressLine.replace(/,/g, '');
-      const postcodePattern = new RegExp(postcode.replace(/\s+/g, ''), 'i');
-      cleaned = cleaned.replace(postcodePattern, '');
-      return cleaned.trim();
-    }
-
-    // UPDATED addressSubmit click handler using Nominatim geocoding
-    addressSubmit.addEventListener('click', async () => {
-      const rawAddressLine = addressInput.value.trim();
-      const postcode = document.getElementById('postcode').value.trim();
-      if (!rawAddressLine || !postcode) return;
-
-      const addressLine = cleanAddressLine(rawAddressLine, postcode);
-      const fullAddress = `${addressLine}, ${postcode}, Wales`;
-
-      resultDiv.innerText = '';
-      const interval = startProgress();
-
-      try {
-        // Optional: you can still call getAddress.io here if you want to validate address or get suggestions
-        // but it doesn't return lat/lon, so not needed strictly
-
-        // Use Nominatim OSM geocoding to get lat/lon from full address
-        const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`);
-        const geoData = await geoRes.json();
-
-        clearInterval(interval);
-
-        if (!geoData || geoData.length === 0) {
-          stopProgress('No coordinates returned from address lookup.');
+        if (!matchedFeature) {
+          stopProgress('Your location is outside the Senedd boundaries.');
           return;
         }
 
-        // Take first geocoded result
-        const { lat, lon } = geoData[0];
-        const userPoint = turf.point([parseFloat(lon), parseFloat(lat)]);
-        const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
-
-        if (match) {
-          renderConstituency(match);
+        if (nearBoundary) {
+          stopProgress();
+          resultDiv.textContent = 'You are close to a constituency boundary.';
+          showAddressFallback();
         } else {
-          stopProgress('Could not find your constituency from address.');
+          renderConstituency(matchedFeature);
         }
       } catch (err) {
-        clearInterval(interval);
+        stopProgress('Error looking up postcode.');
         console.error(err);
-        stopProgress('Address lookup failed.');
       }
     });
 
+    // Handle current location button
     useLocationBtn.addEventListener('click', () => {
       if (!navigator.geolocation) {
         alert('Geolocation is not supported by your browser.');
         return;
       }
 
-      resultDiv.innerText = '';
+      resultDiv.textContent = '';
       hideAddressFallback();
-      const interval = startProgress();
+      startProgress();
 
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        try {
-          const { latitude, longitude } = position.coords;
-          const res = await fetch(`https://api.postcodes.io/postcodes?lon=${longitude}&lat=${latitude}`);
-          const data = await res.json();
-          clearInterval(interval);
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const userPoint = turf.point([longitude, latitude]);
 
-          if (!data.result || data.result.length === 0) throw new Error('Could not find postcode');
-
-          const postcode = data.result[0].postcode;
-          document.getElementById('postcode').value = postcode;
-          form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-        } catch (err) {
-          clearInterval(interval);
-          console.error(err);
-          stopProgress('Could not determine postcode from location.');
+        if (!boundaries) {
+          stopProgress('Constituency data not loaded.');
+          return;
         }
-      }, (error) => {
-        clearInterval(interval);
-        stopProgress('Geolocation error: ' + error.message);
-      });
+
+        let matchedFeature = null;
+        let nearBoundary = false;
+
+        for (const feature of boundaries.features) {
+          if (turf.booleanPointInPolygon(userPoint, feature)) {
+            matchedFeature = feature;
+            nearBoundary = isNearBoundary(feature, userPoint, 1);
+            break;
+          }
+        }
+
+        if (!matchedFeature) {
+          stopProgress('Your location is outside the Senedd boundaries.');
+          return;
+        }
+
+        if (nearBoundary) {
+          stopProgress();
+          resultDiv.textContent = 'You are close to a constituency boundary.';
+          showAddressFallback();
+        } else {
+          renderConstituency(matchedFeature);
+        }
+      }, (err) => {
+        stopProgress('Unable to retrieve your location.');
+        console.error(err);
+      }, { timeout: 10000 });
     });
 
-    // Privacy info toggle (optional)
-    document.getElementById('toggle-info-btn').addEventListener('click', () => {
-      const infoText = document.getElementById('info-text');
-      if (infoText.style.opacity === '1') {
-        infoText.style.opacity = '0';
-        infoText.style.height = '0';
-      } else {
-        infoText.style.opacity = '1';
-        infoText.style.height = 'auto';
+    // Address fallback submit
+    addressSubmit.addEventListener('click', async () => {
+      const addressLine = addressInput.value.trim();
+      const postcode = postcodeInput.value.trim().replace(/\s+/g, '');
+
+      if (!addressLine) {
+        alert('Please enter an address line for accuracy.');
+        return;
       }
+
+      resultDiv.textContent = '';
+      startProgress();
+
+      try {
+        const cleanedAddress = cleanAddressLine(addressLine, postcode);
+        const query = encodeURIComponent(`${cleanedAddress} ${postcode}`);
+
+        // Use getAddress.io API or similar here:
+        const apiKey = 'bIFf8Sc6M0WyEvHy31Vguw46656';
+        const url = `https://api.getaddress.io/find/${postcode}/${encodeURIComponent(cleanedAddress)}?api-key=${apiKey}`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!data.addresses || data.addresses.length === 0) {
+          stopProgress('No addresses found for the provided details.');
+          return;
+        }
+
+        // Parse first address and geocode
+        const fullAddress = data.addresses[0].replace(/,/g, ' ');
+        const geocodeRes = await fetch(`https://api.postcodes.io/postcodes?q=${encodeURIComponent(fullAddress)}`);
+        const geocodeData = await geocodeRes.json();
+
+        if (!geocodeData.result || geocodeData.result.length === 0) {
+          stopProgress('Could not geocode the provided address.');
+          return;
+        }
+
+        const { latitude, longitude } = geocodeData.result[0];
+        const userPoint = turf.point([longitude, latitude]);
+
+        let matchedFeature = null;
+        for (const feature of boundaries.features) {
+          if (turf.booleanPointInPolygon(userPoint, feature)) {
+            matchedFeature = feature;
+            break;
+          }
+        }
+
+        if (!matchedFeature) {
+          stopProgress('The provided address is outside the Senedd boundaries.');
+          return;
+        }
+
+        renderConstituency(matchedFeature);
+      } catch (err) {
+        stopProgress('Error processing the address input.');
+        console.error(err);
+      }
+    });
+
+    // Toggle privacy info
+    toggleInfoBtn.addEventListener('click', () => {
+      const visible = infoText.style.opacity === '1';
+      infoText.style.opacity = visible ? '0' : '1';
+      infoText.style.height = visible ? '0' : 'auto';
+      toggleInfoBtn.setAttribute('aria-expanded', String(!visible));
     });
   </script>
 </body>
