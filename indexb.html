@@ -3,7 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <title>Find Your 2026 Senedd Constituency</title>
+
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-sA+oQKCuVVytAs6UHUxK0QEcHjT2MkKZQ/efYs6vp7o="
+    crossorigin=""
+  />
+  
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-vcRtxp/80K/bTME/P3BybEJl5p5e7si3H0pvS7Vx+1o="
+    crossorigin=""
+  ></script>
+  
   <style>
     html, body {
       height: 100%;
@@ -16,7 +31,7 @@
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
-      align-items: flex-start; /* left align */
+      align-items: flex-start;
       padding: 1rem;
       max-width: 700px;
       box-sizing: border-box;
@@ -24,12 +39,13 @@
     .container {
       width: 100%;
       background-color: #fff;
-      border: 1px solid #004978; /* ITV News blue border */
+      border: 1px solid #004978;
       padding: 1.5rem;
       box-sizing: border-box;
       box-shadow: none;
-      border-radius: 0; /* square corners */
+      border-radius: 0;
       text-align: left;
+      margin-bottom: 1rem;
     }
     h2 {
       color: #004978;
@@ -75,20 +91,22 @@
       color: #004978;
     }
     a.const-name {
-      color: #e4002b; /* ITV News red for links */
+      color: #e4002b;
       font-weight: 700;
       text-decoration: none;
     }
     a.const-name:hover {
       text-decoration: underline;
     }
-    iframe.flourish-embed {
+    /* Map container */
+    #map {
       width: 100%;
       height: 320px;
-      border: none;
+      border: 1px solid #004978;
+      border-radius: 0;
+      box-sizing: border-box;
       margin-top: 1rem;
     }
-    /* Small note about data source */
     .data-source {
       font-size: 0.8rem;
       color: #666;
@@ -101,41 +119,111 @@
     <h2>Find Your 2026 Senedd Constituency</h2>
     <form id="lookup-form">
       <label for="postcode">Enter your postcode:</label>
-      <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required aria-required="true" aria-describedby="postcode-desc" />
+      <input
+        type="text"
+        id="postcode"
+        placeholder="e.g. CF99 1SN"
+        required
+        aria-required="true"
+        aria-describedby="postcode-desc"
+      />
       <div id="postcode-desc" style="font-size:0.8rem; color:#666; margin-top:0.2rem;">
         Enter a Welsh postcode to find your constituency.
       </div>
       <button type="submit">Look up</button>
     </form>
     <div id="result" aria-live="polite"></div>
+    <div id="map" aria-label="Senedd constituency map"></div>
     <div class="data-source">Data from Senedd Cymru/Welsh Parliament</div>
   </div>
 
-  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
   <script>
     (function() {
       const form = document.getElementById('lookup-form');
       const resultDiv = document.getElementById('result');
       let boundaries = null;
+      let map, geojsonLayer, highlightLayer;
 
-      // Load Senedd boundaries GeoJSON
+      // Initialize Leaflet map with no base layer (blank background)
+      function initMap() {
+        map = L.map('map', {
+          center: [52.3, -3.5], // Center roughly on Wales
+          zoom: 7,
+          zoomControl: true,
+          attributionControl: false,
+          dragging: true,
+          scrollWheelZoom: false,
+        });
+
+        // Optional: Add a light grey empty tile just so boundaries show on a faint background
+        // Remove/comment this if you want pure blank background:
+        // L.tileLayer('', {}).addTo(map);
+      }
+
+      // Add GeoJSON layer with all boundaries (no fill)
+      function addBoundaries() {
+        if (geojsonLayer) {
+          map.removeLayer(geojsonLayer);
+        }
+
+        geojsonLayer = L.geoJSON(boundaries, {
+          style: {
+            color: '#004978',
+            weight: 1,
+            fillOpacity: 0,
+          },
+        }).addTo(map);
+
+        // Fit map bounds to the boundaries layer
+        map.fitBounds(geojsonLayer.getBounds());
+      }
+
+      // Highlight a constituency polygon by name (property: enw_cymrae)
+      function highlightConstituency(name) {
+        if (highlightLayer) {
+          map.removeLayer(highlightLayer);
+        }
+
+        const feature = boundaries.features.find(
+          (f) => f.properties.enw_cymrae === name
+        );
+
+        if (!feature) return;
+
+        highlightLayer = L.geoJSON(feature, {
+          style: {
+            color: '#e4002b', // ITV News red
+            weight: 3,
+            fillColor: '#e4002b',
+            fillOpacity: 0.4,
+          },
+        }).addTo(map);
+
+        map.fitBounds(highlightLayer.getBounds());
+      }
+
+      // Load GeoJSON and initialize map
       fetch('senedd2026.json')
-        .then(res => res.json())
-        .then(data => {
+        .then((res) => res.json())
+        .then((data) => {
           boundaries = data;
+          initMap();
+          addBoundaries();
         })
         .catch(() => {
           resultDiv.textContent = 'Error loading constituency data.';
         });
 
-      form.addEventListener('submit', async e => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
         resultDiv.textContent = 'Looking up constituency…';
 
         const postcode = document.getElementById('postcode').value.trim();
 
         try {
-          const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
+          const res = await fetch(
+            `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`
+          );
           const data = await res.json();
 
           if (!data.result) throw new Error('Invalid postcode');
@@ -148,7 +236,9 @@
           const userPoint = turf.point([longitude, latitude]);
 
           // Find constituency polygon containing point
-          const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
+          const match = boundaries.features.find((f) =>
+            turf.booleanPointInPolygon(userPoint, f)
+          );
 
           if (!match) {
             resultDiv.textContent = 'Could not find your constituency.';
@@ -156,17 +246,19 @@
           }
 
           const constituencyName = match.properties.enw_cymrae;
-          const slug = constituencyName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+          const slug = constituencyName
+            .toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^\w-]/g, '');
 
-          // Flourish embed URL — replace YOUR_FLOURISH_VIS_ID with your real Flourish ID
-          const flourishVisId = '23652088';
-          const embedUrl = `https://public.flourish.studio/visualisation/${flourishVisId}/embed?highlight=${encodeURIComponent(constituencyName)}`;
-
-          // Build HTML result with link and embedded map iframe
           resultDiv.innerHTML = `
-            <p>Your 2026 Senedd constituency is: <a href="cons/${slug}.html" class="const-name" target="_blank" rel="noopener">${constituencyName}</a></p>
-            <iframe class="flourish-embed" src="${embedUrl}" title="Map showing ${constituencyName} constituency"></iframe>
-          `;
+            <p>Your 2026 Senedd constituency is: 
+              <a href="cons/${slug}.html" class="const-name" target="_blank" rel="noopener">
+                ${constituencyName}
+              </a>
+            </p>`;
+
+          highlightConstituency(constituencyName);
         } catch (err) {
           resultDiv.textContent = 'Something went wrong. Please check your postcode and try again.';
           console.error(err);
