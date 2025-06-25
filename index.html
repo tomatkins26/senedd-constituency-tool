@@ -16,37 +16,30 @@
       background-color: #E5EFF1;
       color: #000;
       display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      align-items: center;
+      justify-content: flex-start; /* align top */
+      align-items: center; /* horizontally center */
       min-height: 100vh;
-      padding-top: 1rem;
+      padding: 1rem 0;
     }
 
     .container {
       background: #fff;
       border: 1px solid #ccc;
       border-radius: 12px;
-      padding: 2rem;
       max-width: 500px;
       width: 90%;
+      padding: 2rem 2rem 3rem;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      margin-bottom: 2rem;
-      margin-top: 0;
-      text-align: center;
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
       gap: 1.5rem;
-    }
-
-    img.logo {
-      max-width: 160px;
-      margin-bottom: 0.4rem;
+      text-align: center;
     }
 
     h2 {
       color: #006473;
-      margin-bottom: 1.5rem;
+      margin: 0;
     }
 
     label {
@@ -113,37 +106,6 @@
       opacity: 0.85;
     }
 
-    #result {
-      margin-top: 1rem;
-      font-weight: bold;
-      text-align: center;
-    }
-
-    .const-name {
-      color: #006473;
-      text-decoration: none;
-    }
-
-    .const-name:hover {
-      text-decoration: underline;
-    }
-
-    .const-content {
-      max-width: 500px;
-      width: 90%;
-      margin: 0 auto;
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 12px;
-      padding: 1rem 1.5rem;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      text-align: left; /* for readability of constituency HTML content */
-      font-size: 0.95rem;
-      line-height: 1.4;
-      color: #222;
-      margin-bottom: 2rem;
-    }
-
     .progress-container {
       height: 6px;
       background-color: #ddd;
@@ -158,6 +120,35 @@
       background-color: #006473;
       width: 0%;
       transition: width 2.5s linear;
+    }
+
+    #result {
+      font-weight: bold;
+      text-align: center;
+      min-height: 2rem; /* prevent layout jump */
+    }
+
+    .const-name {
+      color: #006473;
+      text-decoration: none;
+    }
+
+    .const-name:hover {
+      text-decoration: underline;
+    }
+
+    /* Constituency content below the result, left aligned text for readability */
+    #constituency-content {
+      margin-top: 1rem;
+      text-align: left;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      color: #222;
+      display: none; /* hidden until populated */
+      border-top: 1px solid #ccc;
+      padding-top: 1rem;
+      max-height: 400px;
+      overflow-y: auto;
     }
 
     footer {
@@ -222,12 +213,13 @@
   </style>
 </head>
 <body>
-  <div class="container">
+  <main class="container" role="main" aria-label="Senedd constituency lookup">
     <h2>Find Your 2026 Senedd Constituency</h2>
+
     <form id="lookup-form">
       <label for="postcode">Enter your postcode:</label>
       <div class="postcode-wrapper">
-        <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
+        <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required autocomplete="postal-code" />
         <button type="button" id="use-location" class="icon-button" title="Use my current location" aria-label="Use my current location">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
@@ -237,14 +229,14 @@
       <button type="submit">Look up</button>
     </form>
 
-    <div class="progress-container" id="progress-container">
+    <div class="progress-container" id="progress-container" aria-hidden="true">
       <div class="progress-bar" id="progress-bar"></div>
     </div>
 
-    <div id="result"></div>
-  </div>
+    <div id="result" role="alert" aria-live="polite"></div>
 
-  <div id="constituency-content" class="const-content" style="display:none;"></div>
+    <section id="constituency-content" aria-live="polite"></section>
+  </main>
 
   <footer>
     Data from Senedd Cymru/Welsh Parliament<br />
@@ -257,10 +249,10 @@
   <script>
     const form = document.getElementById('lookup-form');
     const resultDiv = document.getElementById('result');
+    const constituencyContent = document.getElementById('constituency-content');
     const progressContainer = document.getElementById('progress-container');
     const progressBar = document.getElementById('progress-bar');
     const useLocationBtn = document.getElementById('use-location');
-    const constituencyContent = document.getElementById('constituency-content');
 
     let boundaries = null;
 
@@ -269,7 +261,22 @@
       .then(data => {
         boundaries = data;
       })
-      .catch(err => (resultDiv.innerText = 'Error loading constituency data.'));
+      .catch(err => {
+        resultDiv.innerText = 'Error loading constituency data.';
+        console.error(err);
+      });
+
+    async function loadConstituencyHtml(slug) {
+      try {
+        const res = await fetch(`cons/${slug}.html`);
+        if (!res.ok) throw new Error('Could not load constituency details.');
+        const html = await res.text();
+        return html;
+      } catch (err) {
+        console.error(err);
+        return `<p>Could not load detailed constituency information.</p>`;
+      }
+    }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -308,82 +315,56 @@
               .replace(/[^\w-]/g, '');
             const url = `cons/${slug}.html`;
 
-            resultDiv.innerHTML = `Your 2026 Senedd constituency is: <span class="const-name">${match.properties.enw_cymrae}</span>`;
+            resultDiv.innerHTML = `Your 2026 Senedd constituency is: <a href="${url}" class="const-name" target="_blank" rel="noopener noreferrer">${match.properties.enw_cymrae}</a>`;
 
-            // Fetch and insert constituency HTML into the content container
-            try {
-              const consRes = await fetch(url);
-              if (!consRes.ok) throw new Error('Constituency page not found');
-              const consHtml = await consRes.text();
-              constituencyContent.innerHTML = consHtml;
-              constituencyContent.style.display = 'block';
-            } catch (err) {
-              constituencyContent.innerHTML = '<p>Could not load constituency details.</p>';
-              constituencyContent.style.display = 'block';
-            }
+            const htmlContent = await loadConstituencyHtml(slug);
+            constituencyContent.innerHTML = htmlContent;
+            constituencyContent.style.display = 'block';
           } else {
-            resultDiv.innerText = 'Could not find your constituency.';
+            resultDiv.innerText = 'Could not find your constituency boundary for this postcode.';
           }
         }, 2500);
       } catch (err) {
-        console.error(err);
-        setTimeout(() => {
-          progressContainer.style.display = 'none';
-          resultDiv.innerText = 'Something went wrong. Please try again.';
-        }, 2500);
+        progressContainer.style.display = 'none';
+        resultDiv.innerText = 'Error looking up postcode.';
       }
     });
 
     useLocationBtn.addEventListener('click', () => {
       if (!navigator.geolocation) {
-        alert('Geolocation is not supported by your browser.');
+        alert('Geolocation not supported by your browser.');
         return;
       }
-
-      resultDiv.innerText = '';
-      constituencyContent.style.display = 'none';
-      constituencyContent.innerHTML = '';
-      progressBar.style.width = '0%';
-      progressContainer.style.display = 'block';
-      progressBar.offsetHeight; // trigger reflow
-      progressBar.style.width = '100%';
-
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        try {
-          const { latitude, longitude } = position.coords;
-          const res = await fetch(`https://api.postcodes.io/postcodes?lon=${longitude}&lat=${latitude}`);
-          const data = await res.json();
-
-          if (!data.result || data.result.length === 0) throw new Error('Could not find postcode');
-
-          const postcode = data.result[0].postcode;
-          document.getElementById('postcode').value = postcode;
-
-          form.dispatchEvent(new Event('submit'));
-        } catch (err) {
-          progressContainer.style.display = 'none';
-          resultDiv.innerText = 'Could not find postcode from your location.';
-        }
-      }, () => {
-        progressContainer.style.display = 'none';
-        alert('Unable to retrieve your location.');
-      });
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          // Reverse geocode coordinates to postcode
+          fetch(`https://api.postcodes.io/postcodes?lon=${longitude}&lat=${latitude}`)
+            .then(res => res.json())
+            .then(data => {
+              if (data.status === 200 && data.result.length) {
+                document.getElementById('postcode').value = data.result[0].postcode;
+                form.dispatchEvent(new Event('submit'));
+              } else {
+                alert('Could not find postcode from your location.');
+              }
+            });
+        },
+        () => alert('Unable to retrieve your location.')
+      );
     });
 
-    // Toggle "More information" / "Less information" in footer
+    // Toggle privacy info
     const toggleBtn = document.getElementById('toggle-info-btn');
-    const toggleSpan = toggleBtn.querySelector('span');
     const infoText = document.getElementById('info-text');
 
     toggleBtn.addEventListener('click', () => {
-      if (infoText.style.opacity === '0' || infoText.style.opacity === '') {
-        infoText.style.height = 'auto';
-        infoText.style.opacity = '1';
-        toggleSpan.textContent = 'Less information';
-      } else {
+      if (infoText.style.opacity === '1') {
         infoText.style.opacity = '0';
         infoText.style.height = '0';
-        toggleSpan.textContent = 'More information';
+      } else {
+        infoText.style.opacity = '1';
+        infoText.style.height = 'auto';
       }
     });
   </script>
