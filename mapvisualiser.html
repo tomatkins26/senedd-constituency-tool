@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Senedd 2026 Map with Hover</title>
+<style>
+  body {
+    display: flex;
+    justify-content: center;
+    margin-top: 40px;
+  }
+  svg {
+    border: 1px solid #333;
+    width: 600px;
+    height: 400px;
+  }
+  path {
+    fill: #4a90e2;
+    stroke: #333;
+    stroke-width: 1;
+    transition: fill 0.3s ease;
+    cursor: pointer;
+  }
+  path:hover {
+    fill: #f39c12;  /* bright orange on hover */
+  }
+</style>
+</head>
+<body>
+
+<svg id="map" viewBox="0 0 600 400"></svg>
+
+<script>
+// Convert GeoJSON coordinates to SVG path string
+function geojsonToSVGPath(geojson, width, height) {
+  let coords = [];
+  if (geojson.type === 'FeatureCollection') {
+    geojson.features.forEach(feature => {
+      if (feature.geometry.type === 'Polygon') {
+        coords.push(...feature.geometry.coordinates);
+      } else if (feature.geometry.type === 'MultiPolygon') {
+        coords.push(...feature.geometry.coordinates.flat());
+      }
+    });
+  } else if (geojson.type === 'Feature') {
+    if (geojson.geometry.type === 'Polygon') {
+      coords = geojson.geometry.coordinates;
+    } else if (geojson.geometry.type === 'MultiPolygon') {
+      coords = geojson.geometry.coordinates.flat();
+    }
+  } else {
+    throw new Error("Unsupported GeoJSON type");
+  }
+
+  const allPoints = coords.flat();
+
+  const xs = allPoints.map(c => c[0]);
+  const ys = allPoints.map(c => c[1]);
+
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+
+  const geoWidth = maxX - minX;
+  const geoHeight = maxY - minY;
+  const scaleX = width / geoWidth;
+  const scaleY = height / geoHeight;
+  const scale = Math.min(scaleX, scaleY);
+
+  const xOffset = (width - geoWidth * scale) / 2;
+  const yOffset = (height - geoHeight * scale) / 2;
+
+  function project(coord) {
+    const x = (coord[0] - minX) * scale + xOffset;
+    const y = height - ((coord[1] - minY) * scale + yOffset);
+    return [x, y];
+  }
+
+  let path = '';
+  for (const polygon of coords) {
+    path += 'M';
+    path += polygon.map(coord => project(coord).join(',')).join(' L');
+    path += ' Z ';
+  }
+  return path;
+}
+
+// Load GeoJSON and render
+fetch('senedd2026.json')
+  .then(response => {
+    if (!response.ok) throw new Error("Failed to load GeoJSON");
+    return response.json();
+  })
+  .then(geojson => {
+    const svg = document.getElementById('map');
+    const pathData = geojsonToSVGPath(geojson, 600, 400);
+    const pathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    pathEl.setAttribute('d', pathData);
+    pathEl.setAttribute('title', 'Senedd 2026 Constituency');
+    svg.appendChild(pathEl);
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Error loading or parsing GeoJSON file.");
+  });
+</script>
+
+</body>
+</html>
