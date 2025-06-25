@@ -10,13 +10,13 @@
       margin: 0;
       font-family: Arial, sans-serif;
       background-color: #fff;
-      color: #000000; /* updated text color */
+      color: #004978; /* ITV News dark blue */
     }
     body {
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
-      align-items: flex-start;
+      align-items: flex-start; /* left align */
       padding: 1rem;
       max-width: 700px;
       box-sizing: border-box;
@@ -24,15 +24,15 @@
     .container {
       width: 100%;
       background-color: #fff;
-      border: 0px solid #006473; /* updated blue-green border */
+      border: 1px solid #004978; /* ITV News blue border */
       padding: 1.5rem;
       box-sizing: border-box;
       box-shadow: none;
-      border-radius: 0;
+      border-radius: 0; /* square corners */
       text-align: left;
     }
     h2 {
-      color: #28394e;
+      color: #004978;
       margin-bottom: 1rem;
       font-weight: 700;
       font-size: 1.5rem;
@@ -46,17 +46,17 @@
       width: 100%;
       padding: 0.5rem;
       font-size: 1rem;
-      border: 1px solid #006473;
+      border: 1px solid #004978;
       border-radius: 0;
       box-sizing: border-box;
       outline-offset: 2px;
     }
     input[type="text"]:focus {
-      outline: 2px solid #006473;
+      outline: 2px solid #ff0000; /* ITV News red focus */
     }
     button[type="submit"] {
       margin-top: 1rem;
-      background-color: #006473;
+      background-color: #e4002b; /* ITV News red */
       border: none;
       padding: 0.6rem 1rem;
       color: white;
@@ -67,25 +67,24 @@
       font-size: 1rem;
     }
     button[type="submit"]:hover {
-      background-color: #004f5c;
+      background-color: #b30022;
     }
     #result {
       margin-top: 1.5rem;
       font-weight: 600;
-      color: #28394e;
+      color: #004978;
     }
     a.const-name {
-      color: #006473;
+      color: #e4002b; /* ITV News red for links */
       font-weight: 700;
       text-decoration: none;
     }
     a.const-name:hover {
       text-decoration: underline;
     }
-    iframe.flourish-embed {
+    img.const-image {
       width: 100%;
-      height: 320px;
-      border: none;
+      height: auto;
       margin-top: 1rem;
     }
     .data-source {
@@ -110,13 +109,13 @@
     <div class="data-source">Data from Senedd Cymru/Welsh Parliament</div>
   </div>
 
+  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
   <script>
     (function() {
       const form = document.getElementById('lookup-form');
       const resultDiv = document.getElementById('result');
       let boundaries = null;
 
-      // Load Senedd boundaries
       fetch('senedd2026.json')
         .then(res => res.json())
         .then(data => {
@@ -128,8 +127,8 @@
 
       form.addEventListener('submit', async e => {
         e.preventDefault();
-        const postcode = document.getElementById('postcode').value.trim();
         resultDiv.textContent = 'Looking up constituency…';
+        const postcode = document.getElementById('postcode').value.trim();
 
         try {
           const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
@@ -143,6 +142,7 @@
 
           const { longitude, latitude } = data.result;
           const userPoint = turf.point([longitude, latitude]);
+
           const match = boundaries.features.find(feature => turf.booleanPointInPolygon(userPoint, feature));
 
           if (!match) {
@@ -152,21 +152,15 @@
 
           const constituencyName = match.properties.enw_cymrae;
           const slug = constituencyName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-          const flourishVisId = '23652088';
-          const embedUrl = `https://public.flourish.studio/visualisation/${flourishVisId}/embed?highlight=${encodeURIComponent(constituencyName)}`;
 
           resultDiv.innerHTML = `
-            <p>Your 2026 Senedd constituency is: <a href="cons/${slug}.html" class="const-name" target="_blank" rel="noopener">${constituencyName}</a></p>
-            <iframe class="flourish-embed" src="${embedUrl}" title="Map showing ${constituencyName} constituency" id="flourish-frame"></iframe>
+            <p>Your 2026 Senedd constituency is: 
+              <a href="cons/${slug}.html" class="const-name" target="_blank" rel="noopener">
+                ${constituencyName}
+              </a>
+            </p>
+            <img class="const-image" src="images/${slug}.jpg" alt="Map of ${constituencyName} constituency" />
           `;
-
-          const iframe = document.getElementById('flourish-frame');
-          iframe.addEventListener('load', () => {
-            iframe.contentWindow.postMessage({
-              type: 'highlight',
-              payload: constituencyName
-            }, '*');
-          });
         } catch (err) {
           resultDiv.textContent = 'Something went wrong. Please check your postcode and try again.';
           console.error(err);
