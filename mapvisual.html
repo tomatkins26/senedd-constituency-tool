@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Senedd 2026 SVG Map</title>
+<title>Senedd 2026 SVG Map (Embedded GeoJSON)</title>
 <style>
   body, html {
     margin: 0; padding: 0; height: 100vh; overflow: hidden;
@@ -14,7 +14,7 @@
   svg {
     border: 1px solid #ccc;
     background: white;
-    touch-action: none; /* prevent default touch gestures */
+    touch-action: none;
   }
   polygon {
     cursor: pointer;
@@ -49,31 +49,54 @@
 (() => {
   const svg = document.getElementById('map');
   const tooltip = document.getElementById('tooltip');
-
-  // Group to hold polygons, will be transformed for zoom/pan
   const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   svg.appendChild(g);
 
-  // Variables for zoom and pan
+  // Zoom & pan state
   let zoom = 1;
   let offsetX = 0;
   let offsetY = 0;
   let isDragging = false;
   let dragStart = null;
 
-  // Load GeoJSON
-  fetch('senedd2026.json')
-    .then(res => res.json())
-    .then(data => {
-      drawMap(data);
-    })
-    .catch(err => {
-      console.error('Failed to load GeoJSON:', err);
-      alert('Failed to load GeoJSON file. Make sure senedd2026.json is in the same folder.');
-    });
+  // === Embed your full senedd2026.json content here ===
+  // Replace this example with your real data
+  const data = {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "properties": { "name": "Constituency A" },
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[
+            [-3, 51],
+            [-3, 52],
+            [-2, 52],
+            [-2, 51],
+            [-3, 51]
+          ]]
+        }
+      },
+      {
+        "type": "Feature",
+        "properties": { "name": "Constituency B" },
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[
+            [-2, 51],
+            [-2, 52],
+            [-1, 52],
+            [-1, 51],
+            [-2, 51]
+          ]]
+        }
+      }
+    ]
+  };
 
   function drawMap(data) {
-    // 1. Extract all coordinates to find bounds
+    // Extract all coordinates
     let allCoords = [];
     data.features.forEach(feature => {
       const geom = feature.geometry;
@@ -91,7 +114,6 @@
     const latMin = Math.min(...lats);
     const latMax = Math.max(...lats);
 
-    // Calculate scale to fit into SVG viewBox (1000x700)
     const geoWidth = lonMax - lonMin;
     const geoHeight = latMax - latMin;
     const viewWidth = 1000;
@@ -99,25 +121,21 @@
 
     const scaleX = viewWidth / geoWidth;
     const scaleY = viewHeight / geoHeight;
-    const scale = Math.min(scaleX, scaleY) * 0.95; // small margin
+    const scale = Math.min(scaleX, scaleY) * 0.95;
 
-    // Offsets to center map in viewBox
     const offsetXGeo = (viewWidth - geoWidth * scale) / 2;
     const offsetYGeo = (viewHeight - geoHeight * scale) / 2;
 
-    // Projection function (lon/lat to SVG coordinates)
     function project([lon, lat]) {
       const x = (lon - lonMin) * scale + offsetXGeo;
       const y = viewHeight - ((lat - latMin) * scale + offsetYGeo);
       return [x, y];
     }
 
-    // Create SVG path string from coordinates
     function coordsToPath(coords) {
       return coords.map(point => project(point).join(',')).join(' ');
     }
 
-    // Draw each constituency polygon
     data.features.forEach(feature => {
       const geom = feature.geometry;
       const name = feature.properties?.name || 'Unknown';
@@ -169,7 +187,6 @@
     });
   }
 
-  // Tooltip functions
   function showTooltip(text) {
     tooltip.style.display = 'block';
     tooltip.textContent = text;
@@ -193,7 +210,7 @@
     tooltip.style.display = 'none';
   }
 
-  // Zoom and pan handlers
+  // Zoom & pan handlers
   svg.addEventListener('wheel', e => {
     e.preventDefault();
     const zoomIntensity = 0.1;
@@ -208,7 +225,6 @@
     zoom *= factor;
     zoom = Math.min(Math.max(zoom, 0.5), 10);
 
-    // Adjust offset to zoom on mouse position
     offsetX = cursorpt.x - (cursorpt.x - offsetX) * factor;
     offsetY = cursorpt.y - (cursorpt.y - offsetY) * factor;
 
@@ -238,6 +254,8 @@
   function updateTransform() {
     g.setAttribute('transform', `translate(${offsetX} ${offsetY}) scale(${zoom})`);
   }
+
+  drawMap(data);
 
 })();
 </script>
