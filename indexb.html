@@ -63,7 +63,7 @@
     <form id="lookup-form">
       <label for="postcode">Enter your postcode:</label>
       <div class="postcode-wrapper">
-        <input type="text" id="postcode" placeholder="e.g. CF98 1SN" required />
+        <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
         <button type="button" id="use-location" class="icon-button" title="Use my current location" aria-label="Use my current location">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
@@ -88,7 +88,7 @@
 
   <footer>
     Data from Senedd Cymru/Welsh Parliament<br />
-    <div id="info-text" style="opacity:0; height:0; overflow:hidden; transition: opacity 0.3s, height 0.3s;">
+    <div id="info-text" style="opacity:0; height:0; overflow:hidden; transition: all 0.3s ease;">
       The location and/or postcode you provide are only used to identify your 2026 Senedd constituency. They are not saved, tracked or shared.
     </div>
     <button id="toggle-info-btn"><span>Privacy information</span></button>
@@ -114,7 +114,7 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const postcode = document.getElementById('postcode').value.trim();
-      resultDiv.innerHTML = '';
+      resultDiv.innerText = '';
       hideAddressFallback();
       startProgress();
 
@@ -134,21 +134,15 @@
         const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
 
         if (match) {
-          // Get polygon outer ring coords (boundary)
-          const polygonCoords = turf.getCoords(match)[0];
-          const polygonBoundary = turf.lineString(polygonCoords);
-
-          // Find nearest point on boundary line
-          const nearest = turf.nearestPointOnLine(polygonBoundary, userPoint);
-
-          // Calculate distance in kilometers
+          // FIXED HERE:
+          const coords = turf.getCoords(match.geometry)[0]; // get outer ring of polygon
+          const nearest = turf.nearestPointOnLine(turf.lineString(coords), userPoint);
           const dist = turf.distance(userPoint, nearest, { units: 'kilometers' });
 
           if (dist <= 1) {
             showAddressFallback();
-            stopProgress();  // no message, just stop loading
+            stopProgress();
           } else {
-            hideAddressFallback();
             renderConstituency(match);
           }
         } else {
@@ -165,7 +159,7 @@
       const postcode = document.getElementById('postcode').value.trim();
       if (!addressLine || !postcode) return;
 
-      resultDiv.innerHTML = '';
+      resultDiv.innerText = '';
       startProgress();
 
       try {
@@ -194,7 +188,7 @@
         return;
       }
 
-      resultDiv.innerHTML = '';
+      resultDiv.innerText = '';
       hideAddressFallback();
       startProgress();
 
@@ -230,13 +224,12 @@
     function hideAddressFallback() {
       addressSection.classList.remove('visible');
       addressInput.value = '';
-      resultDiv.innerHTML = ''; // clear messages on fallback hide
     }
 
     function startProgress() {
       progressBar.style.width = '0%';
       progressContainer.style.display = 'block';
-      progressBar.offsetHeight; // trigger reflow for animation
+      progressBar.offsetHeight;
       progressBar.style.width = '100%';
     }
 
