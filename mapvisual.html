@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Senedd 2026 GeoJSON Map</title>
+  <title>Senedd 2026 GeoJSON Shapes Only</title>
   
-  <!-- Leaflet CSS -->
   <link 
     rel="stylesheet" 
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
     crossorigin=""
   />
   
@@ -16,62 +15,96 @@
     #map {
       height: 600px;
       width: 100%;
+      background: #f0f0f0; /* Light grey background so shapes stand out */
+    }
+    .highlighted {
+      fill: orange !important;
+      fill-opacity: 0.7 !important;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  
-  <h1>Senedd 2026 Constituencies Map</h1>
+  <h1>Senedd 2026 Constituencies - Shapes Only</h1>
   <div id="map"></div>
 
-  <!-- Leaflet JS -->
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    crossorigin=""
-  ></script>
-
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script>
-    // Initialize map — change center and zoom if needed
-    const map = L.map('map').setView([52.5, -3], 7); // Centered roughly on Wales
+    const map = L.map('map', {
+      center: [52.5, -3],
+      zoom: 7,
+      // Disable zoom control and dragging if you want a static view
+      zoomControl: false,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      boxZoom: false,
+      keyboard: false
+    });
 
-    // Add OSM tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18,
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
+    // No tile layer added — blank background only
 
-    // Fetch and add GeoJSON from the file
+    // Styling function for GeoJSON polygons
+    function style(feature) {
+      return {
+        fillColor: '#0074D9',
+        weight: 2,
+        opacity: 1,
+        color: 'white',
+        dashArray: '3',
+        fillOpacity: 0.5
+      };
+    }
+
+    // Highlight feature on hover
+    function highlightFeature(e) {
+      const layer = e.target;
+      layer.setStyle({
+        weight: 3,
+        color: '#666',
+        fillColor: 'orange',
+        fillOpacity: 0.7
+      });
+      layer.bringToFront();
+
+      // Optionally show tooltip on hover
+      if(layer.feature.properties && layer.feature.properties.name){
+        layer.bindTooltip(layer.feature.properties.name, {
+          sticky: true,
+          className: 'custom-tooltip'
+        }).openTooltip();
+      }
+    }
+
+    // Reset highlight when hover ends
+    function resetHighlight(e) {
+      geojson.resetStyle(e.target);
+      e.target.closeTooltip();
+    }
+
+    // Add interactivity listeners
+    function onEachFeature(feature, layer) {
+      layer.on({
+        mouseover: highlightFeature,
+        mouseout: resetHighlight
+      });
+    }
+
+    let geojson;
+
     fetch('senedd2026.json')
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Failed to load GeoJSON');
-        }
-        return response.json();
-      })
+      .then(response => response.json())
       .then(data => {
-        // Add GeoJSON layer
-        const geojsonLayer = L.geoJSON(data, {
-          style: {
-            color: '#0074D9',
-            weight: 2,
-            fillColor: '#7FDBFF',
-            fillOpacity: 0.5
-          },
-          onEachFeature: function(feature, layer) {
-            // Bind a popup showing the constituency name (adjust property name as needed)
-            if (feature.properties && feature.properties.name) {
-              layer.bindPopup(`<strong>${feature.properties.name}</strong>`);
-            }
-          }
+        geojson = L.geoJSON(data, {
+          style: style,
+          onEachFeature: onEachFeature
         }).addTo(map);
 
-        // Zoom the map to the GeoJSON layer bounds
-        map.fitBounds(geojsonLayer.getBounds());
+        map.fitBounds(geojson.getBounds());
       })
-      .catch(error => {
-        console.error('Error loading GeoJSON:', error);
+      .catch(err => {
+        console.error('Error loading GeoJSON:', err);
       });
   </script>
-
 </body>
 </html>
