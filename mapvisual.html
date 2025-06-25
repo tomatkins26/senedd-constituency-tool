@@ -1,110 +1,157 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Senedd 2026 GeoJSON Shapes Only</title>
-  
-  <link 
-    rel="stylesheet" 
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
-    crossorigin=""
-  />
-  
-  <style>
-    #map {
-      height: 600px;
-      width: 100%;
-      background: #f0f0f0; /* Light grey background so shapes stand out */
-    }
-    .highlighted {
-      fill: orange !important;
-      fill-opacity: 0.7 !important;
-      cursor: pointer;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Senedd 2026 GeoJSON SVG Visualization</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    overflow: hidden;
+    position: relative;
+  }
+  svg {
+    width: 100vw;
+    height: 100vh;
+    background: #f0f0f0;
+  }
+  path.constituency {
+    fill: steelblue;
+    stroke: white;
+    stroke-width: 1.5;
+    fill-opacity: 0.6;
+    cursor: pointer;
+    transition: fill-opacity 0.3s, fill 0.3s;
+  }
+  path.constituency:hover {
+    fill: orange;
+    fill-opacity: 0.9;
+  }
+  #tooltip {
+    position: absolute;
+    padding: 6px 10px;
+    background: rgba(0,0,0,0.75);
+    color: white;
+    border-radius: 4px;
+    pointer-events: none;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+    z-index: 10;
+  }
+</style>
 </head>
 <body>
-  <h1>Senedd 2026 Constituencies - Shapes Only</h1>
-  <div id="map"></div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script>
-    const map = L.map('map', {
-      center: [52.5, -3],
-      zoom: 7,
-      // Disable zoom control and dragging if you want a static view
-      zoomControl: false,
-      dragging: false,
-      scrollWheelZoom: false,
-      doubleClickZoom: false,
-      boxZoom: false,
-      keyboard: false
+<div id="tooltip"></div>
+<svg id="map"></svg>
+
+<script>
+  const svg = document.getElementById('map');
+  const tooltip = document.getElementById('tooltip');
+
+  // A very simple projection function to convert [lon, lat] to [x, y]
+  // This is a rough equirectangular projection scaled to fit SVG width & height.
+  // You might want to tweak scale and translate for your area.
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+
+  // Bounds of your area (Wales roughly) - adjust if needed
+  const lonMin = -5.5, lonMax = -2;
+  const latMin = 51.3, latMax = 53.6;
+
+  function project([lon, lat]) {
+    // Normalize longitude and latitude within bounds and map to SVG coords
+    const x = ((lon - lonMin) / (lonMax - lonMin)) * width;
+    const y = height - ((lat - latMin) / (latMax - latMin)) * height;
+    return [x, y];
+  }
+
+  function createPath(coords) {
+    if (!coords) return '';
+
+    // GeoJSON polygons can be nested arrays:
+    // Polygon: array of linear rings (exterior + holes)
+    // MultiPolygon: array of polygons
+
+    if (typeof coords[0][0] === 'number') {
+      // It's a LinearRing (Polygon ring)
+      return coords.map(point => {
+        const [x, y] = project(point);
+        return `${x},${y}`;
+      }).join(' ');
+    } else {
+      // It's MultiPolygon or Polygon with holes
+      // Recursively build path data for all rings
+      let d = '';
+      coords.forEach(ring => {
+        d += 'M' + createPath(ring) + 'Z ';
+      });
+      return d.trim();
+    }
+  }
+
+  function geoJSONToSVGPath(feature) {
+    const geom = feature.geometry;
+    if (!geom) return '';
+
+    if (geom.type === 'Polygon') {
+      const rings = geom.coordinates;
+      return rings.map(ring => 'M' + createPath(ring) + 'Z').join(' ');
+    } else if (geom.type === 'MultiPolygon') {
+      const polygons = geom.coordinates;
+      return polygons.map(polygon =>
+        polygon.map(ring => 'M' + createPath(ring) + 'Z').join(' ')
+      ).join(' ');
+    }
+    return '';
+  }
+
+  // Load the GeoJSON file
+  fetch('senedd2026.json')
+    .then(res => {
+      if (!res.ok) throw new Error('Could not load GeoJSON');
+      return res.json();
+    })
+    .then(data => {
+      data.features.forEach(feature => {
+        const pathData = geoJSONToSVGPath(feature);
+        if (!pathData) return;
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', pathData);
+        path.setAttribute('class', 'constituency');
+        path.setAttribute('data-name', feature.properties.name || 'Unknown');
+
+        // Mouse events for tooltip and hover effect (hover handled by CSS)
+        path.addEventListener('mousemove', e => {
+          tooltip.style.opacity = 1;
+          tooltip.style.left = (e.pageX + 10) + 'px';
+          tooltip.style.top = (e.pageY + 10) + 'px';
+          tooltip.textContent = path.getAttribute('data-name');
+        });
+        path.addEventListener('mouseout', () => {
+          tooltip.style.opacity = 0;
+        });
+
+        svg.appendChild(path);
+      });
+    })
+    .catch(err => {
+      console.error('Error loading or processing GeoJSON:', err);
     });
 
-    // No tile layer added — blank background only
+  // Optional: resize SVG and recalc if window size changes
+  window.addEventListener('resize', () => {
+    svg.setAttribute('width', window.innerWidth);
+    svg.setAttribute('height', window.innerHeight);
+  });
+  svg.setAttribute('width', width);
+  svg.setAttribute('height', height);
 
-    // Styling function for GeoJSON polygons
-    function style(feature) {
-      return {
-        fillColor: '#0074D9',
-        weight: 2,
-        opacity: 1,
-        color: 'white',
-        dashArray: '3',
-        fillOpacity: 0.5
-      };
-    }
+</script>
 
-    // Highlight feature on hover
-    function highlightFeature(e) {
-      const layer = e.target;
-      layer.setStyle({
-        weight: 3,
-        color: '#666',
-        fillColor: 'orange',
-        fillOpacity: 0.7
-      });
-      layer.bringToFront();
-
-      // Optionally show tooltip on hover
-      if(layer.feature.properties && layer.feature.properties.name){
-        layer.bindTooltip(layer.feature.properties.name, {
-          sticky: true,
-          className: 'custom-tooltip'
-        }).openTooltip();
-      }
-    }
-
-    // Reset highlight when hover ends
-    function resetHighlight(e) {
-      geojson.resetStyle(e.target);
-      e.target.closeTooltip();
-    }
-
-    // Add interactivity listeners
-    function onEachFeature(feature, layer) {
-      layer.on({
-        mouseover: highlightFeature,
-        mouseout: resetHighlight
-      });
-    }
-
-    let geojson;
-
-    fetch('senedd2026.json')
-      .then(response => response.json())
-      .then(data => {
-        geojson = L.geoJSON(data, {
-          style: style,
-          onEachFeature: onEachFeature
-        }).addTo(map);
-
-        map.fitBounds(geojson.getBounds());
-      })
-      .catch(err => {
-        console.error('Error loading GeoJSON:', err);
-      });
-  </script>
 </body>
 </html>
