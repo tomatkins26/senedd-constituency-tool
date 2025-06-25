@@ -17,10 +17,10 @@
       color: #000;
       display: flex;
       flex-direction: column;
-      justify-content: flex-start; /* changed from center */
+      justify-content: flex-start;
       align-items: center;
       min-height: 100vh;
-      padding-top: 1rem; /* small gap at top */
+      padding-top: 1rem;
     }
 
     .container {
@@ -32,8 +32,11 @@
       width: 90%;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       margin-bottom: 2rem;
-      margin-top: 0; /* ensure no top margin */
+      margin-top: 0;
       text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
     }
 
     img.logo {
@@ -111,7 +114,7 @@
     }
 
     #result {
-      margin-top: 1.5rem;
+      margin-top: 1rem;
       font-weight: bold;
       text-align: center;
     }
@@ -123,6 +126,22 @@
 
     .const-name:hover {
       text-decoration: underline;
+    }
+
+    .const-content {
+      max-width: 500px;
+      width: 90%;
+      margin: 0 auto;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      text-align: left; /* for readability of constituency HTML content */
+      font-size: 0.95rem;
+      line-height: 1.4;
+      color: #222;
+      margin-bottom: 2rem;
     }
 
     .progress-container {
@@ -139,20 +158,6 @@
       background-color: #006473;
       width: 0%;
       transition: width 2.5s linear;
-    }
-
-    /* New container for loaded constituency HTML */
-    #constituency-container {
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 12px;
-      padding: 2rem;
-      max-width: 500px;
-      width: 90%;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      margin: 1rem auto 2rem auto;
-      text-align: left;
-      min-height: 100px; /* reserve some vertical space */
     }
 
     footer {
@@ -239,8 +244,7 @@
     <div id="result"></div>
   </div>
 
-  <!-- New container for constituency HTML -->
-  <div id="constituency-container" style="display:none;"></div>
+  <div id="constituency-content" class="const-content" style="display:none;"></div>
 
   <footer>
     Data from Senedd Cymru/Welsh Parliament<br />
@@ -256,7 +260,7 @@
     const progressContainer = document.getElementById('progress-container');
     const progressBar = document.getElementById('progress-bar');
     const useLocationBtn = document.getElementById('use-location');
-    const constituencyContainer = document.getElementById('constituency-container');
+    const constituencyContent = document.getElementById('constituency-content');
 
     let boundaries = null;
 
@@ -271,8 +275,8 @@
       e.preventDefault();
       const postcode = document.getElementById('postcode').value.trim();
       resultDiv.innerText = '';
-      constituencyContainer.style.display = 'none';
-      constituencyContainer.innerHTML = '';
+      constituencyContent.style.display = 'none';
+      constituencyContent.innerHTML = '';
       progressBar.style.width = '0%';
       progressContainer.style.display = 'block';
       progressBar.offsetHeight; // trigger reflow
@@ -306,16 +310,16 @@
 
             resultDiv.innerHTML = `Your 2026 Senedd constituency is: <span class="const-name">${match.properties.enw_cymrae}</span>`;
 
-            // Fetch and insert the constituency HTML into the container
+            // Fetch and insert constituency HTML into the content container
             try {
-              const htmlRes = await fetch(url);
-              if (!htmlRes.ok) throw new Error('Constituency page not found');
-              const htmlText = await htmlRes.text();
-              constituencyContainer.innerHTML = htmlText;
-              constituencyContainer.style.display = 'block';
+              const consRes = await fetch(url);
+              if (!consRes.ok) throw new Error('Constituency page not found');
+              const consHtml = await consRes.text();
+              constituencyContent.innerHTML = consHtml;
+              constituencyContent.style.display = 'block';
             } catch (err) {
-              constituencyContainer.innerHTML = '<p>Constituency details unavailable.</p>';
-              constituencyContainer.style.display = 'block';
+              constituencyContent.innerHTML = '<p>Could not load constituency details.</p>';
+              constituencyContent.style.display = 'block';
             }
           } else {
             resultDiv.innerText = 'Could not find your constituency.';
@@ -337,8 +341,8 @@
       }
 
       resultDiv.innerText = '';
-      constituencyContainer.style.display = 'none';
-      constituencyContainer.innerHTML = '';
+      constituencyContent.style.display = 'none';
+      constituencyContent.innerHTML = '';
       progressBar.style.width = '0%';
       progressContainer.style.display = 'block';
       progressBar.offsetHeight; // trigger reflow
