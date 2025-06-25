@@ -76,10 +76,10 @@
     <div id="address-section">
       <div id="address-warning">You're near a boundary. Please enter your address line for better accuracy:</div>
       <input type="text" id="address-line" placeholder="e.g. 10 Queen Street" />
-      <button id="address-submit">Submit Address</button>
+      <button id="address-submit" type="button">Submit Address</button>
     </div>
 
-    <div class="progress-container" id="progress-container">
+    <div class="progress-container" id="progress-container" style="display:none;">
       <div class="progress-bar" id="progress-bar"></div>
     </div>
 
@@ -106,22 +106,72 @@
     let boundaries = null;
     let lastPostcodeCoords = null;
 
+    // Load boundaries GeoJSON
     fetch('senedd2026.json')
       .then(res => res.json())
       .then(data => boundaries = data)
       .catch(err => (resultDiv.innerText = 'Error loading constituency data.'));
 
+    function startProgress() {
+      progressContainer.style.display = 'block';
+      progressBar.style.width = '0%';
+      let width = 0;
+      const interval = setInterval(() => {
+        if (width >= 90) {
+          clearInterval(interval);
+          return;
+        }
+        width += 10;
+        progressBar.style.width = width + '%';
+      }, 100);
+      return interval;
+    }
+
+    function stopProgress(message) {
+      progressBar.style.width = '100%';
+      setTimeout(() => {
+        progressContainer.style.display = 'none';
+        progressBar.style.width = '0%';
+        if (message) {
+          resultDiv.innerText = message;
+        }
+      }, 300);
+    }
+
+    function showAddressFallback() {
+      addressSection.classList.add('visible');
+    }
+
+    function hideAddressFallback() {
+      addressSection.classList.remove('visible');
+      addressInput.value = '';
+    }
+
+    function renderConstituency(feature) {
+      stopProgress();
+      resultDiv.innerHTML = `<h3>Your constituency is:</h3><p><strong>${feature.properties.PCON21NM}</strong></p>`;
+      hideAddressFallback();
+    }
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const postcode = document.getElementById('postcode').value.trim();
+      if (!postcode) return;
+
       resultDiv.innerText = '';
       hideAddressFallback();
-      startProgress();
+      const interval = startProgress();
 
       try {
         const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
         const data = await res.json();
-        if (!data.result) throw new Error('Invalid postcode');
+        clearInterval(interval);
+
+        if (!data.result) {
+          stopProgress('Invalid postcode.');
+          return;
+        }
+
         const { longitude, latitude, country } = data.result;
 
         if (country !== 'Wales') {
@@ -134,8 +184,8 @@
         const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
 
         if (match) {
-          // FIXED HERE:
-          const coords = turf.getCoords(match.geometry)[0]; // get outer ring of polygon
+          // Check if user near boundary (within 1 km)
+          const coords = turf.getCoords(match.geometry)[0]; // Outer ring of polygon
           const nearest = turf.nearestPointOnLine(turf.lineString(coords), userPoint);
           const dist = turf.distance(userPoint, nearest, { units: 'kilometers' });
 
@@ -149,18 +199,18 @@
           stopProgress('Could not find your constituency.');
         }
       } catch (err) {
+        clearInterval(interval);
         console.error(err);
         stopProgress('Something went wrong. Please try again.');
       }
     });
 
-    // Helper to clean address line before lookup
+    // Clean address line for lookup
     function cleanAddressLine(rawAddressLine, postcode) {
       let cleaned = rawAddressLine.replace(/,/g, '');
       const postcodePattern = new RegExp(postcode.replace(/\s+/g, ''), 'i');
       cleaned = cleaned.replace(postcodePattern, '');
-      cleaned = cleaned.trim();
-      return cleaned;
+      return cleaned.trim();
     }
 
     addressSubmit.addEventListener('click', async () => {
@@ -171,14 +221,22 @@
       const addressLine = cleanAddressLine(rawAddressLine, postcode);
 
       resultDiv.innerText = '';
-      startProgress();
+      const interval = startProgress();
 
       try {
-        const apiKey = 'bIFf8Sc6M0WyEvHy31Vguw46656'; // replace with actual key
-        const res = await fetch(`https://api.getaddress.io/find/${postcode}/${encodeURIComponent(addressLine)}?api-key=${apiKey}`);
+        const apiKey = 'bIFf8Sc6M0WyEvHy31Vguw46656'; // Replace with your real key
+        const url = `https://api.getaddress.io/find/${encodeURIComponent(postcode)}/${encodeURIComponent(addressLine)}?api-key=${apiKey}`;
+
+        const res = await fetch(url);
         const data = await res.json();
 
-        if (!data.latitude || !data.longitude) throw new Error('No coordinates returned');
+        clearInterval(interval);
+
+        if (!data.latitude || !data.longitude) {
+          stopProgress('No coordinates returned from address lookup.');
+          return;
+        }
+
         const userPoint = turf.point([parseFloat(data.longitude), parseFloat(data.latitude)]);
         const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
 
@@ -188,6 +246,7 @@
           stopProgress('Could not find your constituency from address.');
         }
       } catch (err) {
+        clearInterval(interval);
         console.error(err);
         stopProgress('Address lookup failed.');
       }
@@ -201,16 +260,42 @@
 
       resultDiv.innerText = '';
       hideAddressFallback();
-      startProgress();
+      const interval = startProgress();
 
       navigator.geolocation.getCurrentPosition(async (position) => {
         try {
           const { latitude, longitude } = position.coords;
           const res = await fetch(`https://api.postcodes.io/postcodes?lon=${longitude}&lat=${latitude}`);
           const data = await res.json();
+          clearInterval(interval);
 
           if (!data.result || data.result.length === 0) throw new Error('Could not find postcode');
+
           const postcode = data.result[0].postcode;
           document.getElementById('postcode').value = postcode;
-          form.dispatchEvent(new Event('submit'));
-        } catch (
+          form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+        } catch (err) {
+          clearInterval(interval);
+          console.error(err);
+          stopProgress('Could not determine postcode from location.');
+        }
+      }, (error) => {
+        clearInterval(interval);
+        stopProgress('Geolocation error: ' + error.message);
+      });
+    });
+
+    // Privacy info toggle (optional)
+    document.getElementById('toggle-info-btn').addEventListener('click', () => {
+      const infoText = document.getElementById('info-text');
+      if (infoText.style.opacity === '1') {
+        infoText.style.opacity = '0';
+        infoText.style.height = '0';
+      } else {
+        infoText.style.opacity = '1';
+        infoText.style.height = 'auto';
+      }
+    });
+  </script>
+</body>
+</html>
