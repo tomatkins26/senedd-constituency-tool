@@ -111,6 +111,28 @@
       .then(data => boundaries = data)
       .catch(err => (resultDiv.innerText = 'Error loading constituency data.'));
 
+    // Helper to safely get outer ring coords
+    function getOuterRingCoords(geometry) {
+      if (!geometry) return null;
+
+      if (geometry.type === 'Polygon') {
+        const coords = turf.getCoords(geometry);
+        if (coords.length > 0 && coords[0].length >= 2) {
+          return coords[0];
+        }
+      } else if (geometry.type === 'MultiPolygon') {
+        const coords = turf.getCoords(geometry);
+        if (
+          coords.length > 0 &&
+          coords[0].length > 0 &&
+          coords[0][0].length >= 2
+        ) {
+          return coords[0][0];
+        }
+      }
+      return null;
+    }
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const postcode = document.getElementById('postcode').value.trim();
@@ -134,8 +156,12 @@
         const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
 
         if (match) {
-          // FIXED HERE:
-          const coords = turf.getCoords(match.geometry)[0]; // get outer ring of polygon
+          const coords = getOuterRingCoords(match.geometry);
+          if (!coords) {
+            stopProgress('Invalid polygon geometry data.');
+            return;
+          }
+
           const nearest = turf.nearestPointOnLine(turf.lineString(coords), userPoint);
           const dist = turf.distance(userPoint, nearest, { units: 'kilometers' });
 
@@ -163,7 +189,7 @@
       startProgress();
 
       try {
-        const apiKey = 'bIFf8Sc6M0WyEvHy31Vguw46656'; // replace with actual key
+        const apiKey = 'bIFf8Sc6M0WyEvHy31Vguw46656'; // your actual key
         const res = await fetch(`https://api.getaddress.io/find/${postcode}/${encodeURIComponent(addressLine)}?api-key=${apiKey}`);
         const data = await res.json();
 
