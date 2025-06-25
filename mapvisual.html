@@ -1,236 +1,213 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Senedd 2026 SVG Map (Fetch from GitHub)</title>
-<style>
-  body, html {
-    margin: 0; padding: 0; height: 100vh; overflow: hidden;
-    display: flex; justify-content: center; align-items: center;
-    background: #f0f0f0;
-    user-select: none;
-  }
-  svg {
-    border: 1px solid #ccc;
-    background: white;
-    touch-action: none;
-  }
-  polygon {
-    cursor: pointer;
-    transition: fill 0.3s ease;
-    stroke: white;
-    stroke-width: 1.5;
-    fill: #0B3D91; /* ITV News dark blue */
-  }
-  polygon:hover {
-    fill: #E4002B; /* ITV News red on hover */
-  }
-  #tooltip {
-    position: fixed;
-    pointer-events: none;
-    background: rgba(0,0,0,0.7);
-    color: white;
-    padding: 4px 8px;
-    font-family: sans-serif;
-    font-size: 14px;
-    border-radius: 4px;
-    white-space: nowrap;
-    display: none;
-  }
-</style>
-</head>
-<body>
-
-<svg id="map" width="90vw" height="90vh" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet"></svg>
-<div id="tooltip"></div>
-
 <script>
-(() => {
   const svg = document.getElementById('map');
+  const content = document.getElementById('content');
   const tooltip = document.getElementById('tooltip');
-  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-  svg.appendChild(g);
 
-  let zoom = 1;
-  let offsetX = 0;
-  let offsetY = 0;
-  let isDragging = false;
-  let dragStart = null;
+  let width = window.innerWidth;
+  let height = window.innerHeight;
 
-  function drawMap(data) {
-    let allCoords = [];
-    data.features.forEach(feature => {
-      const geom = feature.geometry;
-      if (geom.type === 'Polygon') {
-        geom.coordinates.forEach(ring => ring.forEach(coord => allCoords.push(coord)));
-      } else if (geom.type === 'MultiPolygon') {
-        geom.coordinates.forEach(polygon => polygon.forEach(ring => ring.forEach(coord => allCoords.push(coord))));
-      }
+  let lonMin, lonMax, latMin, latMax;
+
+  // Utility to flatten all coordinates in GeoJSON for bounding box calc
+  function flattenCoords(geometry) {
+    let coords = [];
+    if (!geometry) return coords;
+
+    if (geometry.type === 'Polygon') {
+      geometry.coordinates.forEach(ring => {
+        coords = coords.concat(ring);
+      });
+    } else if (geometry.type === 'MultiPolygon') {
+      geometry.coordinates.forEach(polygon => {
+        polygon.forEach(ring => {
+          coords = coords.concat(ring);
+        });
+      });
+    }
+    return coords;
+  }
+
+  // Calculate bounding box from GeoJSON features
+  function calculateBounds(features) {
+    let lons = [];
+    let lats = [];
+
+    features.forEach(feature => {
+      const coords = flattenCoords(feature.geometry);
+      coords.forEach(([lon, lat]) => {
+        lons.push(lon);
+        lats.push(lat);
+      });
     });
 
-    const lons = allCoords.map(c => c[0]);
-    const lats = allCoords.map(c => c[1]);
-    const lonMin = Math.min(...lons);
-    const lonMax = Math.max(...lons);
-    const latMin = Math.min(...lats);
-    const latMax = Math.max(...lats);
+    return {
+      lonMin: Math.min(...lons),
+      lonMax: Math.max(...lons),
+      latMin: Math.min(...lats),
+      latMax: Math.max(...lats)
+    };
+  }
+
+  // Projection variables (to be set after loading GeoJSON)
+  let scaleX, scaleY, scale, offsetX, offsetY;
+
+  function setupProjection(bounds) {
+    lonMin = bounds.lonMin;
+    lonMax = bounds.lonMax;
+    latMin = bounds.latMin;
+    latMax = bounds.latMax;
 
     const geoWidth = lonMax - lonMin;
     const geoHeight = latMax - latMin;
-    const viewWidth = 1000;
-    const viewHeight = 700;
+    const geoAspect = geoWidth / geoHeight;
+    const svgAspect = width / height;
 
-    const scaleX = viewWidth / geoWidth;
-    const scaleY = viewHeight / geoHeight;
-    const scale = Math.min(scaleX, scaleY) * 0.95;
-
-    const offsetXGeo = (viewWidth - geoWidth * scale) / 2;
-    const offsetYGeo = (viewHeight - geoHeight * scale) / 2;
-
-    function project([lon, lat]) {
-      const x = (lon - lonMin) * scale + offsetXGeo;
-      const y = viewHeight - ((lat - latMin) * scale + offsetYGeo);
-      return [x, y];
+    if (svgAspect > geoAspect) {
+      scale = height / geoHeight;
+      scaleX = scale;
+      scaleY = scale;
+      offsetX = (width - geoWidth * scale) / 2;
+      offsetY = 0;
+    } else {
+      scale = width / geoWidth;
+      scaleX = scale;
+      scaleY = scale;
+      offsetX = 0;
+      offsetY = (height - geoHeight * scale) / 2;
     }
-
-    function coordsToPath(coords) {
-      return coords.map(point => project(point).join(',')).join(' ');
-    }
-
-    data.features.forEach(feature => {
-      const geom = feature.geometry;
-      const name = feature.properties?.name || 'Unknown';
-
-      if (geom.type === 'Polygon') {
-        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-        polygon.setAttribute('points', coordsToPath(geom.coordinates[0]));
-        polygon.setAttribute('fill', '#0B3D91');
-        polygon.setAttribute('stroke', 'white');
-        polygon.setAttribute('stroke-width', 1.5);
-
-        polygon.addEventListener('mouseenter', () => {
-          polygon.setAttribute('fill', '#E4002B');
-          showTooltip(name);
-        });
-        polygon.addEventListener('mouseleave', () => {
-          polygon.setAttribute('fill', '#0B3D91');
-          hideTooltip();
-        });
-        polygon.addEventListener('mousemove', e => {
-          moveTooltip(e.clientX, e.clientY);
-        });
-
-        g.appendChild(polygon);
-      }
-      else if (geom.type === 'MultiPolygon') {
-        geom.coordinates.forEach(polygonCoords => {
-          const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-          polygon.setAttribute('points', coordsToPath(polygonCoords[0]));
-          polygon.setAttribute('fill', '#0B3D91');
-          polygon.setAttribute('stroke', 'white');
-          polygon.setAttribute('stroke-width', 1.5);
-
-          polygon.addEventListener('mouseenter', () => {
-            polygon.setAttribute('fill', '#E4002B');
-            showTooltip(name);
-          });
-          polygon.addEventListener('mouseleave', () => {
-            polygon.setAttribute('fill', '#0B3D91');
-            hideTooltip();
-          });
-          polygon.addEventListener('mousemove', e => {
-            moveTooltip(e.clientX, e.clientY);
-          });
-
-          g.appendChild(polygon);
-        });
-      }
-    });
   }
 
-  function showTooltip(text) {
-    tooltip.style.display = 'block';
-    tooltip.textContent = text;
-  }
-  function moveTooltip(x, y) {
-    const padding = 10;
-    const tooltipRect = tooltip.getBoundingClientRect();
-    let left = x + padding;
-    let top = y + padding;
-
-    if (left + tooltipRect.width > window.innerWidth) {
-      left = x - tooltipRect.width - padding;
-    }
-    if (top + tooltipRect.height > window.innerHeight) {
-      top = y - tooltipRect.height - padding;
-    }
-    tooltip.style.left = left + 'px';
-    tooltip.style.top = top + 'px';
-  }
-  function hideTooltip() {
-    tooltip.style.display = 'none';
+  function project([lon, lat]) {
+    const x = (lon - lonMin) * scaleX + offsetX;
+    const y = height - ((lat - latMin) * scaleY + offsetY);
+    return [x, y];
   }
 
+  function createPath(coords) {
+    if (!coords) return '';
+
+    if (typeof coords[0][0] === 'number') {
+      return coords.map(point => {
+        const [x, y] = project(point);
+        return `${x},${y}`;
+      }).join(' ');
+    } else {
+      let d = '';
+      coords.forEach(ring => {
+        d += 'M' + createPath(ring) + 'Z ';
+      });
+      return d.trim();
+    }
+  }
+
+  function geoJSONToSVGPath(feature) {
+    const geom = feature.geometry;
+    if (!geom) return '';
+
+    if (geom.type === 'Polygon') {
+      const rings = geom.coordinates;
+      return rings.map(ring => 'M' + createPath(ring) + 'Z').join(' ');
+    } else if (geom.type === 'MultiPolygon') {
+      const polygons = geom.coordinates;
+      return polygons.map(polygon =>
+        polygon.map(ring => 'M' + createPath(ring) + 'Z').join(' ')
+      ).join(' ');
+    }
+    return '';
+  }
+
+  // Zoom and pan state
+  let scaleFactor = 1;
+  let translateX = 0;
+  let translateY = 0;
+  let isDragging = false;
+  let dragStart = null;
+
+  function updateTransform() {
+    content.setAttribute('transform', `translate(${translateX},${translateY}) scale(${scaleFactor})`);
+  }
+
+  // Zoom on wheel
   svg.addEventListener('wheel', e => {
     e.preventDefault();
+
     const zoomIntensity = 0.1;
-    const pt = svg.createSVGPoint();
-    pt.x = e.clientX;
-    pt.y = e.clientY;
-    const cursorpt = pt.matrixTransform(g.getCTM().inverse());
+    const direction = e.deltaY > 0 ? -1 : 1;
 
-    const direction = e.deltaY > 0 ? 1 : -1;
-    const factor = (1 - direction * zoomIntensity);
+    const rect = svg.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
 
-    zoom *= factor;
-    zoom = Math.min(Math.max(zoom, 0.5), 10);
+    const newScale = Math.min(Math.max(scaleFactor + direction * zoomIntensity * scaleFactor, 0.5), 10);
 
-    offsetX = cursorpt.x - (cursorpt.x - offsetX) * factor;
-    offsetY = cursorpt.y - (cursorpt.y - offsetY) * factor;
+    translateX -= (mx - translateX) * (newScale / scaleFactor - 1);
+    translateY -= (my - translateY) * (newScale / scaleFactor - 1);
 
+    scaleFactor = newScale;
     updateTransform();
-  }, { passive: false });
+  });
 
+  // Pan on drag
   svg.addEventListener('mousedown', e => {
     isDragging = true;
-    dragStart = { x: e.clientX, y: e.clientY };
+    dragStart = { x: e.clientX - translateX, y: e.clientY - translateY };
   });
   window.addEventListener('mouseup', () => {
     isDragging = false;
   });
   window.addEventListener('mousemove', e => {
     if (!isDragging) return;
-    e.preventDefault();
-
-    const dx = (e.clientX - dragStart.x) / zoom;
-    const dy = (e.clientY - dragStart.y) / zoom;
-    offsetX += dx;
-    offsetY += dy;
-    dragStart = { x: e.clientX, y: e.clientY };
-
+    translateX = e.clientX - dragStart.x;
+    translateY = e.clientY - dragStart.y;
     updateTransform();
   });
 
-  function updateTransform() {
-    g.setAttribute('transform', `translate(${offsetX} ${offsetY}) scale(${zoom})`);
-  }
-
-  // --- Fetch GeoJSON from GitHub raw URL ---
-  fetch('https://raw.githubusercontent.com/yourusername/yourrepo/main/senedd2026.json')
+  // Load GeoJSON and render
+  fetch('senedd2026.json')
     .then(res => {
-      if (!res.ok) throw new Error('Network response was not ok');
+      if (!res.ok) throw new Error('Could not load GeoJSON');
       return res.json();
     })
     .then(data => {
-      drawMap(data);
+      const bounds = calculateBounds(data.features);
+      setupProjection(bounds);
+
+      data.features.forEach(feature => {
+        const pathData = geoJSONToSVGPath(feature);
+        if (!pathData) return;
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', pathData);
+        path.setAttribute('class', 'constituency');
+        path.setAttribute('data-name', feature.properties.name || 'Unknown');
+
+        path.addEventListener('mousemove', e => {
+          tooltip.style.opacity = 1;
+          tooltip.style.left = (e.pageX + 10) + 'px';
+          tooltip.style.top = (e.pageY + 10) + 'px';
+          tooltip.textContent = path.getAttribute('data-name');
+        });
+        path.addEventListener('mouseout', () => {
+          tooltip.style.opacity = 0;
+        });
+
+        content.appendChild(path);
+      });
+      updateTransform();
     })
     .catch(err => {
-      console.error('Failed to load GeoJSON:', err);
-      alert('Failed to load GeoJSON file.');
+      console.error('Error loading or processing GeoJSON:', err);
     });
-})();
-</script>
 
-</body>
-</html>
+  // Set SVG size
+  svg.setAttribute('width', width);
+  svg.setAttribute('height', height);
+
+  // On resize, update width/height but this example skips reprojecting for simplicity
+  window.addEventListener('resize', () => {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    svg.setAttribute('width', width);
+    svg.setAttribute('height', height);
+  });
+</script>
