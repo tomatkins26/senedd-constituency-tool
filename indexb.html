@@ -6,28 +6,40 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
   <style>
-    /* ... your existing styles ... */
-    #house-number-wrapper {
-      margin-bottom: 1rem;
-      display: none;
-      text-align: left;
+    /* Your existing CSS styles remain the same ... */
+
+    #address-section {
+      margin-top: 1rem;
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      transition: max-height 0.5s ease, opacity 0.5s ease;
     }
-    #house-number-wrapper label {
-      display: block;
-      margin-bottom: 0.3rem;
+
+    #address-section.visible {
+      max-height: 200px;
+      opacity: 1;
     }
-    #house-number-wrapper input {
+
+    #address-line {
       width: 100%;
-      padding: 0.6rem;
+      padding: 0.75rem;
       font-size: 1rem;
       border: 1px solid #ccc;
       border-radius: 8px;
+      margin-bottom: 0.75rem;
       box-sizing: border-box;
-      outline: none;
     }
-    #house-number-wrapper input:focus {
-      border-color: #006473;
-      box-shadow: 0 0 3px #006473;
+
+    #confirm-address {
+      background-color: #004a54;
+      color: #fff;
+      padding: 0.65rem 1rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
     }
   </style>
 </head>
@@ -39,19 +51,20 @@
       <div class="postcode-wrapper">
         <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
         <button type="button" id="use-location" class="icon-button" title="Use my current location" aria-label="Use my current location">
+          <!-- SVG icon -->
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
           </svg>
         </button>
       </div>
-
-      <div id="house-number-wrapper">
-        <label for="house-number">Your house number (optional, for more precise lookup):</label>
-        <input type="text" id="house-number" placeholder="e.g. 12" />
-      </div>
-
       <button type="submit">Look up</button>
     </form>
+
+    <div id="address-section">
+      <label for="address-line">Please enter your first line of address:</label>
+      <input type="text" id="address-line" placeholder="e.g. 10 Downing Street" />
+      <button id="confirm-address">Confirm Address</button>
+    </div>
 
     <div class="progress-container" id="progress-container">
       <div class="progress-bar" id="progress-bar"></div>
@@ -67,93 +80,44 @@
     </div>
     <button id="toggle-info-btn"><span>Privacy information</span></button>
   </footer>
-  
+
   <script>
     const form = document.getElementById('lookup-form');
     const resultDiv = document.getElementById('result');
     const progressContainer = document.getElementById('progress-container');
     const progressBar = document.getElementById('progress-bar');
     const useLocationBtn = document.getElementById('use-location');
-    const houseNumberWrapper = document.getElementById('house-number-wrapper');
-    const houseNumberInput = document.getElementById('house-number');
+    const addressSection = document.getElementById('address-section');
+    const addressInput = document.getElementById('address-line');
+    const confirmAddressBtn = document.getElementById('confirm-address');
 
     let boundaries = null;
+    let postcodeCoords = null;
+    let postcodeValue = null;
 
     fetch('senedd2026.json')
       .then(res => res.json())
       .then(data => {
         boundaries = data;
       })
-      .catch(err => (resultDiv.innerText = 'Error loading constituency data.'));
+      .catch(err => resultDiv.innerText = 'Error loading constituency data.');
 
-    // Helper: find shortest distance from point to any polygon boundary (in km)
-    function minDistanceToBoundaries(point, polygons) {
-      let minDist = Infinity;
-      polygons.features.forEach(feature => {
-        const poly = feature.geometry;
-        // Turf distance from point to polygon perimeter
-        // We'll use turf.pointToLineDistance with polygon exterior ring
-        const line = turf.polygonToLine(feature);
-        const dist = turf.pointToLineDistance(point, line, {units: 'kilometers'});
-        if (dist < minDist) minDist = dist;
-      });
-      return minDist;
-    }
-
-    async function doPostcodeLookup(postcode) {
-      const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
-      const data = await res.json();
-      if (!data.result) throw new Error('Invalid postcode');
-      return data.result;
-    }
-
-    async function doOSNamesLookup(postcode, houseNumber) {
-      // Query OS Names API with postcode + house number for exact coordinate
-      // Replace YOUR_OS_API_KEY with your real key
-      const baseUrl = 'https://api.os.uk/search/places/v1/find';
-      const query = encodeURIComponent(`${houseNumber} ${postcode}`);
-      const url = `${baseUrl}?key=A0tGcinGoUCY5XCrv8IJkFjDwgMDtTIq&fq=postcode:${encodeURIComponent(postcode)}&query=${query}&maxresults=1`;
-
-      const res = await fetch(url);
-      const data = await res.json();
-
-      if (!data.results || data.results.length === 0) {
-        throw new Error('OS Names API: No precise address found');
-      }
-      // Return first result coordinate
-      const coords = data.results[0].DPA;
-      return { latitude: coords.LOCATION.LAT, longitude: coords.LOCATION.LON };
-    }
-
-    async function findConstituencyByCoords(longitude, latitude) {
-      const userPoint = turf.point([longitude, latitude]);
-      const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
-      return match;
-    }
-
-    async function lookupAndDisplay(postcode, houseNumber = null) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      postcodeValue = document.getElementById('postcode').value.trim();
       resultDiv.innerText = '';
       progressBar.style.width = '0%';
       progressContainer.style.display = 'block';
-      progressBar.offsetHeight; // trigger reflow
+      progressBar.offsetHeight;
       progressBar.style.width = '100%';
 
       try {
-        let longitude, latitude, country;
+        const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcodeValue)}`);
+        const data = await res.json();
+        if (!data.result) throw new Error('Invalid postcode');
 
-        if (houseNumber) {
-          // Use OS Names API for precise coordinate
-          const preciseLoc = await doOSNamesLookup(postcode, houseNumber);
-          longitude = preciseLoc.longitude;
-          latitude = preciseLoc.latitude;
-          country = 'Wales'; // assume Wales since postcode confirmed earlier
-        } else {
-          // Use postcodes.io for approximate coordinate
-          const res = await doPostcodeLookup(postcode);
-          longitude = res.longitude;
-          latitude = res.latitude;
-          country = res.country;
-        }
+        const { longitude, latitude, country } = data.result;
+        postcodeCoords = [longitude, latitude];
 
         if (country !== 'Wales') {
           setTimeout(() => {
@@ -163,57 +127,71 @@
           return;
         }
 
-        const userPoint = turf.point([longitude, latitude]);
+        const userPoint = turf.point(postcodeCoords);
+        const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
 
-        if (!houseNumber) {
-          // Check if within 5km of boundary to decide if we show house number input
-          const distance = minDistanceToBoundaries(userPoint, boundaries);
-          if (distance < 5) {
-            houseNumberWrapper.style.display = 'block';
-            resultDiv.innerHTML = `Your postcode is near a boundary. Please enter your house number for a more precise result.`;
-            progressContainer.style.display = 'none';
-            return;
-          } else {
-            houseNumberWrapper.style.display = 'none';
-          }
-        } else {
-          houseNumberWrapper.style.display = 'none'; // Hide once used
+        if (!match) {
+          resultDiv.innerText = 'Could not find your constituency.';
+          progressContainer.style.display = 'none';
+          return;
         }
 
-        const match = await findConstituencyByCoords(longitude, latitude);
+        const minDistance = Math.min(...boundaries.features.map(f => {
+          const line = turf.polygonToLine(f);
+          return turf.pointToLineDistance(userPoint, line, { units: 'kilometers' });
+        }));
+
+        if (minDistance < 1) {
+          addressSection.classList.add('visible');
+        }
 
         setTimeout(() => {
           progressContainer.style.display = 'none';
-          if (match) {
-            const slug = match.properties.enw_cymrae
-              .toLowerCase()
-              .replace(/\s+/g, '-')
-              .replace(/[^\w-]/g, '');
-            const url = `cons/${slug}.html`;
-
-            resultDiv.innerHTML = `Your 2026 Senedd constituency is: <a href="${url}" class="const-name">${match.properties.enw_cymrae}</a>`;
-          } else {
-            resultDiv.innerText = 'Could not find your constituency.';
-          }
+          const slug = match.properties.enw_cymrae.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+          const url = `cons/${slug}.html`;
+          resultDiv.innerHTML = `Your 2026 Senedd constituency is: <a href="${url}" class="const-name">${match.properties.enw_cymrae}</a>`;
         }, 2500);
       } catch (err) {
         console.error(err);
-        setTimeout(() => {
-          progressContainer.style.display = 'none';
-          resultDiv.innerText = err.message || 'Something went wrong. Please try again.';
-        }, 2500);
+        progressContainer.style.display = 'none';
+        resultDiv.innerText = 'Something went wrong. Please try again.';
       }
-    }
+    });
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const postcode = document.getElementById('postcode').value.trim();
-      const houseNumber = houseNumberInput.value.trim();
-      if (houseNumberWrapper.style.display === 'block' && !houseNumber) {
-        resultDiv.innerText = 'Please enter your house number for a more precise lookup.';
-        return;
+    confirmAddressBtn.addEventListener('click', async () => {
+      const line = addressInput.value.trim();
+      if (!line || !postcodeValue) return;
+
+      resultDiv.innerText = 'Improving precision using your address...';
+      try {
+        const res = await fetch(`https://api.getaddress.io/find/${postcodeValue}/${encodeURIComponent(line)}?api-key=YOUR_API_KEY_HERE`);
+        const data = await res.json();
+
+        if (!data || !data.addresses || data.addresses.length === 0) {
+          resultDiv.innerText = 'Could not find a precise match for that address.';
+          return;
+        }
+
+        const best = data.addresses[0];
+        if (!best.latitude || !best.longitude) {
+          resultDiv.innerText = 'No coordinate data found for that address.';
+          return;
+        }
+
+        const point = turf.point([parseFloat(best.longitude), parseFloat(best.latitude)]);
+        const match = boundaries.features.find(f => turf.booleanPointInPolygon(point, f));
+
+        if (match) {
+          const slug = match.properties.enw_cymrae.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+          const url = `cons/${slug}.html`;
+          resultDiv.innerHTML = `✅ Confirmed with address: <a href="${url}" class="const-name">${match.properties.enw_cymrae}</a>`;
+        } else {
+          resultDiv.innerText = 'Could not confirm your constituency from address.';
+        }
+      } catch (err) {
+        console.error(err);
+        resultDiv.innerText = 'Address lookup failed. Please try again.';
       }
-      await lookupAndDisplay(postcode, houseNumberWrapper.style.display === 'block' ? houseNumber : null);
     });
 
     useLocationBtn.addEventListener('click', () => {
@@ -225,7 +203,7 @@
       resultDiv.innerText = '';
       progressBar.style.width = '0%';
       progressContainer.style.display = 'block';
-      progressBar.offsetHeight; // trigger reflow
+      progressBar.offsetHeight;
       progressBar.style.width = '100%';
 
       navigator.geolocation.getCurrentPosition(async (position) => {
@@ -238,9 +216,6 @@
 
           const postcode = data.result[0].postcode;
           document.getElementById('postcode').value = postcode;
-          houseNumberWrapper.style.display = 'none';
-          houseNumberInput.value = '';
-
           form.dispatchEvent(new Event('submit'));
         } catch (err) {
           progressContainer.style.display = 'none';
@@ -252,7 +227,7 @@
       });
     });
 
-    // Toggle "More information" / "Less information" in footer
+    // Toggle privacy info
     const toggleBtn = document.getElementById('toggle-info-btn');
     const toggleSpan = toggleBtn.querySelector('span');
     const infoText = document.getElementById('info-text');
