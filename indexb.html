@@ -88,7 +88,7 @@
 
   <footer>
     Data from Senedd Cymru/Welsh Parliament<br />
-    <div id="info-text">
+    <div id="info-text" style="opacity:0; height:0; overflow:hidden; transition: opacity 0.3s, height 0.3s;">
       The location and/or postcode you provide are only used to identify your 2026 Senedd constituency. They are not saved, tracked or shared.
     </div>
     <button id="toggle-info-btn"><span>Privacy information</span></button>
@@ -114,7 +114,7 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const postcode = document.getElementById('postcode').value.trim();
-      resultDiv.innerText = '';
+      resultDiv.innerHTML = '';
       hideAddressFallback();
       startProgress();
 
@@ -134,15 +134,21 @@
         const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
 
         if (match) {
-          const nearest = turf.nearestPointOnLine(turf.lineString(
-            turf.getCoords(f => f === match)[0] // quick way to get one polygon ring
-          ), userPoint);
+          // Get polygon outer ring coords (boundary)
+          const polygonCoords = turf.getCoords(match)[0];
+          const polygonBoundary = turf.lineString(polygonCoords);
+
+          // Find nearest point on boundary line
+          const nearest = turf.nearestPointOnLine(polygonBoundary, userPoint);
+
+          // Calculate distance in kilometers
           const dist = turf.distance(userPoint, nearest, { units: 'kilometers' });
 
           if (dist <= 1) {
             showAddressFallback();
-            stopProgress();
+            stopProgress();  // no message, just stop loading
           } else {
+            hideAddressFallback();
             renderConstituency(match);
           }
         } else {
@@ -159,7 +165,7 @@
       const postcode = document.getElementById('postcode').value.trim();
       if (!addressLine || !postcode) return;
 
-      resultDiv.innerText = '';
+      resultDiv.innerHTML = '';
       startProgress();
 
       try {
@@ -188,7 +194,7 @@
         return;
       }
 
-      resultDiv.innerText = '';
+      resultDiv.innerHTML = '';
       hideAddressFallback();
       startProgress();
 
@@ -224,12 +230,13 @@
     function hideAddressFallback() {
       addressSection.classList.remove('visible');
       addressInput.value = '';
+      resultDiv.innerHTML = ''; // clear messages on fallback hide
     }
 
     function startProgress() {
       progressBar.style.width = '0%';
       progressContainer.style.display = 'block';
-      progressBar.offsetHeight;
+      progressBar.offsetHeight; // trigger reflow for animation
       progressBar.style.width = '100%';
     }
 
