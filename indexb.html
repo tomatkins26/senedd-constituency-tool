@@ -8,89 +8,106 @@
     html, body {
       height: 100%;
       margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #fff;
-      color: #004978; /* ITV News dark blue */
+      font-family: system-ui, sans-serif;
+      background: #f9f9f9;
+      color: black; /* Updated body text color */
     }
+
     body {
       display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      align-items: flex-start; /* left align */
-      padding: 1rem;
-      max-width: 700px;
-      box-sizing: border-box;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 2rem 1rem;
     }
+
     .container {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 2rem;
+      max-width: 640px;
       width: 100%;
-      background-color: #fff;
-      border: 1px solid #004978; /* ITV News blue border */
-      padding: 1.5rem;
       box-sizing: border-box;
-      box-shadow: none;
-      border-radius: 0; /* square corners */
-      text-align: left;
     }
+
     h2 {
-      color: #004978;
-      margin-bottom: 1rem;
+      margin-top: 0;
+      font-size: 1.75rem;
+      color: #006473; /* Updated primary color */
       font-weight: 700;
-      font-size: 1.5rem;
     }
-    label {
-      display: block;
-      margin-bottom: 0.25rem;
-      font-weight: 600;
-    }
-    input[type="text"] {
-      width: 100%;
-      padding: 0.5rem;
-      font-size: 1rem;
-      border: 1px solid #004978;
-      border-radius: 0;
-      box-sizing: border-box;
-      outline-offset: 2px;
-    }
-    input[type="text"]:focus {
-      outline: 2px solid #ff0000; /* ITV News red focus */
-    }
-    button[type="submit"] {
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
       margin-top: 1rem;
-      background-color: #e4002b; /* ITV News red */
-      border: none;
-      padding: 0.6rem 1rem;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    input[type="text"] {
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      transition: border 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #006473;
+      box-shadow: 0 0 0 2px rgba(0, 100, 115, 0.3); /* Adjusted to primary color */
+    }
+
+    button[type="submit"] {
+      background: #006473; /* Updated primary color */
       color: white;
       font-weight: 700;
-      cursor: pointer;
-      width: 100%;
-      border-radius: 0;
+      border: none;
+      border-radius: 0.5rem;
+      padding: 0.75rem 1rem;
       font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
     }
+
     button[type="submit"]:hover {
-      background-color: #b30022;
+      background: #004f5a;
     }
+
     #result {
-      margin-top: 1.5rem;
+      margin-top: 2rem;
+      font-size: 1rem;
       font-weight: 600;
-      color: #004978;
+      color: #006473; /* Updated primary color */
     }
+
     a.const-name {
-      color: #e4002b; /* ITV News red for links */
-      font-weight: 700;
+      color: #006473; /* Updated primary color */
       text-decoration: none;
+      font-weight: 700;
     }
+
     a.const-name:hover {
       text-decoration: underline;
     }
+
     img.const-image {
+      margin-top: 1rem;
       width: 100%;
       height: auto;
-      margin-top: 1rem;
+      border-radius: 0.75rem;
+      border: none; /* Removed border */
     }
+
     .data-source {
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       color: #666;
-      margin-top: 0.75rem;
+      margin-top: 1rem;
     }
   </style>
 </head>
