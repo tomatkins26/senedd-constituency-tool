@@ -3,40 +3,40 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Senedd 2026 GeoJSON SVG with Zoom, Pan & Proper Aspect Ratio</title>
+<title>Senedd 2026 GeoJSON SVG - ITV News Style</title>
 <style>
   body {
-    font-family: Arial, sans-serif;
     margin: 0;
     overflow: hidden;
+    font-family: Arial, sans-serif;
     position: relative;
   }
   svg {
     width: 100vw;
     height: 100vh;
-    background: #f0f0f0;
-    user-select: none; /* prevent text selection while dragging */
+    background: #f8f9fa;
+    user-select: none;
     cursor: grab;
   }
   svg:active {
     cursor: grabbing;
   }
   path.constituency {
-    fill: steelblue;
+    fill: #002D72; /* deep blue */
     stroke: white;
     stroke-width: 1.5;
-    fill-opacity: 0.6;
+    fill-opacity: 0.7;
+    transition: fill 0.3s, fill-opacity 0.3s;
     cursor: pointer;
-    transition: fill-opacity 0.3s, fill 0.3s;
   }
   path.constituency:hover {
-    fill: orange;
-    fill-opacity: 0.9;
+    fill: #E4002B; /* ITV red */
+    fill-opacity: 1;
   }
   #tooltip {
     position: absolute;
     padding: 6px 10px;
-    background: rgba(0,0,0,0.75);
+    background: rgba(0, 0, 0, 0.75);
     color: white;
     border-radius: 4px;
     pointer-events: none;
@@ -63,38 +63,77 @@
   let width = window.innerWidth;
   let height = window.innerHeight;
 
-  // Geographic bounds for Wales (adjust if needed)
-  const lonMin = -5.5, lonMax = -2;
-  const latMin = 51.3, latMax = 53.6;
-
-  // Calculate geographic and SVG aspect ratios
-  const geoWidth = lonMax - lonMin;
-  const geoHeight = latMax - latMin;
-  const geoAspect = geoWidth / geoHeight;
-  const svgAspect = width / height;
-
+  let lonMin, lonMax, latMin, latMax;
   let scaleX, scaleY, scale, offsetX, offsetY;
 
-  if (svgAspect > geoAspect) {
-    // SVG is wider than geography; fit height and center horizontally
-    scale = height / geoHeight;
-    scaleX = scale;
-    scaleY = scale;
-    offsetX = (width - geoWidth * scale) / 2;
-    offsetY = 0;
-  } else {
-    // SVG is taller; fit width and center vertically
-    scale = width / geoWidth;
-    scaleX = scale;
-    scaleY = scale;
-    offsetX = 0;
-    offsetY = (height - geoHeight * scale) / 2;
+  // Flatten all coordinates from a geometry for bounding box
+  function flattenCoords(geometry) {
+    let coords = [];
+    if (!geometry) return coords;
+
+    if (geometry.type === 'Polygon') {
+      geometry.coordinates.forEach(ring => {
+        coords = coords.concat(ring);
+      });
+    } else if (geometry.type === 'MultiPolygon') {
+      geometry.coordinates.forEach(polygon => {
+        polygon.forEach(ring => {
+          coords = coords.concat(ring);
+        });
+      });
+    }
+    return coords;
   }
 
-  // Projection function with aspect ratio fix and centering
+  // Calculate geographic bounding box for all features
+  function calculateBounds(features) {
+    let lons = [];
+    let lats = [];
+
+    features.forEach(feature => {
+      const coords = flattenCoords(feature.geometry);
+      coords.forEach(([lon, lat]) => {
+        lons.push(lon);
+        lats.push(lat);
+      });
+    });
+
+    return {
+      lonMin: Math.min(...lons),
+      lonMax: Math.max(...lons),
+      latMin: Math.min(...lats),
+      latMax: Math.max(...lats)
+    };
+  }
+
+  function setupProjection(bounds) {
+    lonMin = bounds.lonMin;
+    lonMax = bounds.lonMax;
+    latMin = bounds.latMin;
+    latMax = bounds.latMax;
+
+    const geoWidth = lonMax - lonMin;
+    const geoHeight = latMax - latMin;
+    const geoAspect = geoWidth / geoHeight;
+    const svgAspect = width / height;
+
+    if (svgAspect > geoAspect) {
+      scale = height / geoHeight;
+      scaleX = scale;
+      scaleY = scale;
+      offsetX = (width - geoWidth * scale) / 2;
+      offsetY = 0;
+    } else {
+      scale = width / geoWidth;
+      scaleX = scale;
+      scaleY = scale;
+      offsetX = 0;
+      offsetY = (height - geoHeight * scale) / 2;
+    }
+  }
+
   function project([lon, lat]) {
     const x = (lon - lonMin) * scaleX + offsetX;
-    // Latitude decreases as Y increases, so invert Y axis here
     const y = height - ((lat - latMin) * scaleY + offsetY);
     return [x, y];
   }
@@ -132,7 +171,7 @@
     return '';
   }
 
-  // Zoom and pan state
+  // Zoom & pan variables
   let scaleFactor = 1;
   let translateX = 0;
   let translateY = 0;
@@ -143,7 +182,7 @@
     content.setAttribute('transform', `translate(${translateX},${translateY}) scale(${scaleFactor})`);
   }
 
-  // Zoom on wheel
+  // Zoom handler with wheel
   svg.addEventListener('wheel', e => {
     e.preventDefault();
 
@@ -163,7 +202,7 @@
     updateTransform();
   });
 
-  // Pan on drag
+  // Pan with drag
   svg.addEventListener('mousedown', e => {
     isDragging = true;
     dragStart = { x: e.clientX - translateX, y: e.clientY - translateY };
@@ -185,6 +224,9 @@
       return res.json();
     })
     .then(data => {
+      const bounds = calculateBounds(data.features);
+      setupProjection(bounds);
+
       data.features.forEach(feature => {
         const pathData = geoJSONToSVGPath(feature);
         if (!pathData) return;
@@ -216,34 +258,11 @@
   svg.setAttribute('width', width);
   svg.setAttribute('height', height);
 
-  // Adjust size & recalc on resize
   window.addEventListener('resize', () => {
     width = window.innerWidth;
     height = window.innerHeight;
-
-    const newSvgAspect = width / height;
-    if (newSvgAspect > geoAspect) {
-      scale = height / geoHeight;
-      scaleX = scale;
-      scaleY = scale;
-      offsetX = (width - geoWidth * scale) / 2;
-      offsetY = 0;
-    } else {
-      scale = width / geoWidth;
-      scaleX = scale;
-      scaleY = scale;
-      offsetX = 0;
-      offsetY = (height - geoHeight * scale) / 2;
-    }
-
     svg.setAttribute('width', width);
     svg.setAttribute('height', height);
-
-    // Re-render paths' d attribute with new projection
-    // This is an extra step: if you want paths to resize properly on window resize,
-    // you might want to clear and re-load or re-project paths here.
-    // For simplicity, this example keeps existing paths, so map may stretch on resize.
-    // If you want, I can help implement a full resize + re-project logic.
   });
 </script>
 
