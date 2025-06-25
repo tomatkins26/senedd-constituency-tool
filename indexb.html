@@ -111,28 +111,6 @@
       .then(data => boundaries = data)
       .catch(err => (resultDiv.innerText = 'Error loading constituency data.'));
 
-    // Helper to safely get outer ring coords
-    function getOuterRingCoords(geometry) {
-      if (!geometry) return null;
-
-      if (geometry.type === 'Polygon') {
-        const coords = turf.getCoords(geometry);
-        if (coords.length > 0 && coords[0].length >= 2) {
-          return coords[0];
-        }
-      } else if (geometry.type === 'MultiPolygon') {
-        const coords = turf.getCoords(geometry);
-        if (
-          coords.length > 0 &&
-          coords[0].length > 0 &&
-          coords[0][0].length >= 2
-        ) {
-          return coords[0][0];
-        }
-      }
-      return null;
-    }
-
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const postcode = document.getElementById('postcode').value.trim();
@@ -156,12 +134,8 @@
         const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
 
         if (match) {
-          const coords = getOuterRingCoords(match.geometry);
-          if (!coords) {
-            stopProgress('Invalid polygon geometry data.');
-            return;
-          }
-
+          // FIXED HERE:
+          const coords = turf.getCoords(match.geometry)[0]; // get outer ring of polygon
           const nearest = turf.nearestPointOnLine(turf.lineString(coords), userPoint);
           const dist = turf.distance(userPoint, nearest, { units: 'kilometers' });
 
@@ -180,16 +154,27 @@
       }
     });
 
+    // Helper to clean address line before lookup
+    function cleanAddressLine(rawAddressLine, postcode) {
+      let cleaned = rawAddressLine.replace(/,/g, '');
+      const postcodePattern = new RegExp(postcode.replace(/\s+/g, ''), 'i');
+      cleaned = cleaned.replace(postcodePattern, '');
+      cleaned = cleaned.trim();
+      return cleaned;
+    }
+
     addressSubmit.addEventListener('click', async () => {
-      const addressLine = addressInput.value.trim();
+      const rawAddressLine = addressInput.value.trim();
       const postcode = document.getElementById('postcode').value.trim();
-      if (!addressLine || !postcode) return;
+      if (!rawAddressLine || !postcode) return;
+
+      const addressLine = cleanAddressLine(rawAddressLine, postcode);
 
       resultDiv.innerText = '';
       startProgress();
 
       try {
-        const apiKey = 'bIFf8Sc6M0WyEvHy31Vguw46656'; // your actual key
+        const apiKey = 'bIFf8Sc6M0WyEvHy31Vguw46656'; // replace with actual key
         const res = await fetch(`https://api.getaddress.io/find/${postcode}/${encodeURIComponent(addressLine)}?api-key=${apiKey}`);
         const data = await res.json();
 
@@ -228,60 +213,4 @@
           const postcode = data.result[0].postcode;
           document.getElementById('postcode').value = postcode;
           form.dispatchEvent(new Event('submit'));
-        } catch (err) {
-          stopProgress('Could not find postcode from your location.');
-        }
-      }, () => {
-        stopProgress();
-        alert('Unable to retrieve your location.');
-      });
-    });
-
-    function renderConstituency(feature) {
-      const slug = feature.properties.enw_cymrae.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-      const url = `cons/${slug}.html`;
-      stopProgress(`Your 2026 Senedd constituency is: <a href="${url}" class="const-name">${feature.properties.enw_cymrae}</a>`);
-    }
-
-    function showAddressFallback() {
-      addressSection.classList.add('visible');
-    }
-
-    function hideAddressFallback() {
-      addressSection.classList.remove('visible');
-      addressInput.value = '';
-    }
-
-    function startProgress() {
-      progressBar.style.width = '0%';
-      progressContainer.style.display = 'block';
-      progressBar.offsetHeight;
-      progressBar.style.width = '100%';
-    }
-
-    function stopProgress(message = '') {
-      setTimeout(() => {
-        progressContainer.style.display = 'none';
-        if (message) resultDiv.innerHTML = message;
-      }, 2000);
-    }
-
-    // Footer info toggle
-    const toggleBtn = document.getElementById('toggle-info-btn');
-    const toggleSpan = toggleBtn.querySelector('span');
-    const infoText = document.getElementById('info-text');
-
-    toggleBtn.addEventListener('click', () => {
-      if (infoText.style.opacity === '0' || infoText.style.opacity === '') {
-        infoText.style.height = 'auto';
-        infoText.style.opacity = '1';
-        toggleSpan.textContent = 'Less information';
-      } else {
-        infoText.style.opacity = '0';
-        infoText.style.height = '0';
-        toggleSpan.textContent = 'More information';
-      }
-    });
-  </script>
-</body>
-</html>
+        } catch (
