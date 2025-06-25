@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Senedd 2026 GeoJSON SVG Visualization</title>
+<title>Senedd 2026 GeoJSON SVG with Zoom, Pan & Proper Aspect Ratio</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -15,6 +15,11 @@
     width: 100vw;
     height: 100vh;
     background: #f0f0f0;
+    user-select: none; /* prevent text selection while dragging */
+    cursor: grab;
+  }
+  svg:active {
+    cursor: grabbing;
   }
   path.constituency {
     fill: steelblue;
@@ -46,45 +51,63 @@
 <body>
 
 <div id="tooltip"></div>
-<svg id="map"></svg>
+<svg id="map">
+  <g id="content"></g>
+</svg>
 
 <script>
   const svg = document.getElementById('map');
+  const content = document.getElementById('content');
   const tooltip = document.getElementById('tooltip');
 
-  // A very simple projection function to convert [lon, lat] to [x, y]
-  // This is a rough equirectangular projection scaled to fit SVG width & height.
-  // You might want to tweak scale and translate for your area.
-  const width = window.innerWidth;
-  const height = window.innerHeight;
+  let width = window.innerWidth;
+  let height = window.innerHeight;
 
-  // Bounds of your area (Wales roughly) - adjust if needed
+  // Geographic bounds for Wales (adjust if needed)
   const lonMin = -5.5, lonMax = -2;
   const latMin = 51.3, latMax = 53.6;
 
+  // Calculate geographic and SVG aspect ratios
+  const geoWidth = lonMax - lonMin;
+  const geoHeight = latMax - latMin;
+  const geoAspect = geoWidth / geoHeight;
+  const svgAspect = width / height;
+
+  let scaleX, scaleY, scale, offsetX, offsetY;
+
+  if (svgAspect > geoAspect) {
+    // SVG is wider than geography; fit height and center horizontally
+    scale = height / geoHeight;
+    scaleX = scale;
+    scaleY = scale;
+    offsetX = (width - geoWidth * scale) / 2;
+    offsetY = 0;
+  } else {
+    // SVG is taller; fit width and center vertically
+    scale = width / geoWidth;
+    scaleX = scale;
+    scaleY = scale;
+    offsetX = 0;
+    offsetY = (height - geoHeight * scale) / 2;
+  }
+
+  // Projection function with aspect ratio fix and centering
   function project([lon, lat]) {
-    // Normalize longitude and latitude within bounds and map to SVG coords
-    const x = ((lon - lonMin) / (lonMax - lonMin)) * width;
-    const y = height - ((lat - latMin) / (latMax - latMin)) * height;
+    const x = (lon - lonMin) * scaleX + offsetX;
+    // Latitude decreases as Y increases, so invert Y axis here
+    const y = height - ((lat - latMin) * scaleY + offsetY);
     return [x, y];
   }
 
   function createPath(coords) {
     if (!coords) return '';
 
-    // GeoJSON polygons can be nested arrays:
-    // Polygon: array of linear rings (exterior + holes)
-    // MultiPolygon: array of polygons
-
     if (typeof coords[0][0] === 'number') {
-      // It's a LinearRing (Polygon ring)
       return coords.map(point => {
         const [x, y] = project(point);
         return `${x},${y}`;
       }).join(' ');
     } else {
-      // It's MultiPolygon or Polygon with holes
-      // Recursively build path data for all rings
       let d = '';
       coords.forEach(ring => {
         d += 'M' + createPath(ring) + 'Z ';
@@ -109,7 +132,53 @@
     return '';
   }
 
-  // Load the GeoJSON file
+  // Zoom and pan state
+  let scaleFactor = 1;
+  let translateX = 0;
+  let translateY = 0;
+  let isDragging = false;
+  let dragStart = null;
+
+  function updateTransform() {
+    content.setAttribute('transform', `translate(${translateX},${translateY}) scale(${scaleFactor})`);
+  }
+
+  // Zoom on wheel
+  svg.addEventListener('wheel', e => {
+    e.preventDefault();
+
+    const zoomIntensity = 0.1;
+    const direction = e.deltaY > 0 ? -1 : 1;
+
+    const rect = svg.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    const newScale = Math.min(Math.max(scaleFactor + direction * zoomIntensity * scaleFactor, 0.5), 10);
+
+    translateX -= (mx - translateX) * (newScale / scaleFactor - 1);
+    translateY -= (my - translateY) * (newScale / scaleFactor - 1);
+
+    scaleFactor = newScale;
+    updateTransform();
+  });
+
+  // Pan on drag
+  svg.addEventListener('mousedown', e => {
+    isDragging = true;
+    dragStart = { x: e.clientX - translateX, y: e.clientY - translateY };
+  });
+  window.addEventListener('mouseup', () => {
+    isDragging = false;
+  });
+  window.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    translateX = e.clientX - dragStart.x;
+    translateY = e.clientY - dragStart.y;
+    updateTransform();
+  });
+
+  // Load and render GeoJSON
   fetch('senedd2026.json')
     .then(res => {
       if (!res.ok) throw new Error('Could not load GeoJSON');
@@ -125,7 +194,6 @@
         path.setAttribute('class', 'constituency');
         path.setAttribute('data-name', feature.properties.name || 'Unknown');
 
-        // Mouse events for tooltip and hover effect (hover handled by CSS)
         path.addEventListener('mousemove', e => {
           tooltip.style.opacity = 1;
           tooltip.style.left = (e.pageX + 10) + 'px';
@@ -136,21 +204,47 @@
           tooltip.style.opacity = 0;
         });
 
-        svg.appendChild(path);
+        content.appendChild(path);
       });
+      updateTransform();
     })
     .catch(err => {
       console.error('Error loading or processing GeoJSON:', err);
     });
 
-  // Optional: resize SVG and recalc if window size changes
-  window.addEventListener('resize', () => {
-    svg.setAttribute('width', window.innerWidth);
-    svg.setAttribute('height', window.innerHeight);
-  });
+  // Initial SVG size
   svg.setAttribute('width', width);
   svg.setAttribute('height', height);
 
+  // Adjust size & recalc on resize
+  window.addEventListener('resize', () => {
+    width = window.innerWidth;
+    height = window.innerHeight;
+
+    const newSvgAspect = width / height;
+    if (newSvgAspect > geoAspect) {
+      scale = height / geoHeight;
+      scaleX = scale;
+      scaleY = scale;
+      offsetX = (width - geoWidth * scale) / 2;
+      offsetY = 0;
+    } else {
+      scale = width / geoWidth;
+      scaleX = scale;
+      scaleY = scale;
+      offsetX = 0;
+      offsetY = (height - geoHeight * scale) / 2;
+    }
+
+    svg.setAttribute('width', width);
+    svg.setAttribute('height', height);
+
+    // Re-render paths' d attribute with new projection
+    // This is an extra step: if you want paths to resize properly on window resize,
+    // you might want to clear and re-load or re-project paths here.
+    // For simplicity, this example keeps existing paths, so map may stretch on resize.
+    // If you want, I can help implement a full resize + re-project logic.
+  });
 </script>
 
 </body>
