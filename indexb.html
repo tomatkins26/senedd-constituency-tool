@@ -152,21 +152,10 @@
 
           const constituencyName = match.properties.enw_cymrae;
           const slug = constituencyName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-          const flourishVisId = '23652088';
-          const embedUrl = `https://public.flourish.studio/visualisation/${flourishVisId}/embed?highlight=${encodeURIComponent(constituencyName)}`;
-
-          resultDiv.innerHTML = `
-            <p>Your 2026 Senedd constituency is: <a href="cons/${slug}.html" class="const-name" target="_blank" rel="noopener">${constituencyName}</a></p>
-            <iframe class="flourish-embed" src="${embedUrl}" title="Map showing ${constituencyName} constituency" id="flourish-frame"></iframe>
-          `;
-
-          const iframe = document.getElementById('flourish-frame');
-          iframe.addEventListener('load', () => {
-            iframe.contentWindow.postMessage({
-              type: 'highlight',
-              payload: constituencyName
-            }, '*');
-          });
+        resultDiv.innerHTML = `
+  <p>Your 2026 Senedd constituency is: <a href="cons/${slug}.html" class="const-name" target="_blank" rel="noopener">${constituencyName}</a></p>
+  <img src="images/${slug}.jpg" alt="Map of ${constituencyName} constituency" style="width:100%; margin-top:1rem;" />
+`;
         } catch (err) {
           resultDiv.textContent = 'Something went wrong. Please check your postcode and try again.';
           console.error(err);
