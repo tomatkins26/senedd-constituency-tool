@@ -1,88 +1,58 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Simple GeoJSON Map</title>
-<style>
-  body, html { margin: 0; padding: 0; height: 100%; }
-  svg { width: 100vw; height: 100vh; display: block; background: #f0f0f0; }
-  path {
-    fill: steelblue;
-    stroke: white;
-    stroke-width: 1;
-    transition: fill 0.3s ease;
-  }
-  path:hover {
-    fill: orange;
-    cursor: pointer;
-  }
-</style>
+  <title>Leaflet GeoJSON Map</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+  />
+  
+  <style>
+    #map {
+      height: 600px;
+      width: 100%;
+    }
+  </style>
 </head>
 <body>
-<svg id="map"></svg>
 
+<h2>My GeoJSON Map</h2>
+<div id="map"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 <script>
-  const svg = document.getElementById('map');
-  const width = svg.clientWidth;
-  const height = svg.clientHeight;
+  // Initialize map, centered somewhere reasonable
+  var map = L.map('map').setView([51.505, -0.09], 13);
 
-  // Simple projection: longitude to x, latitude to y (inverted Y)
-  // We scale coordinates so polygon fits nicely in SVG without distortion
-  function project(coords, bounds, size) {
-    const [minX, minY, maxX, maxY] = bounds;
-    const scaleX = size.width / (maxX - minX);
-    const scaleY = size.height / (maxY - minY);
-    const scale = Math.min(scaleX, scaleY);
-    return coords.map(([lon, lat]) => {
-      return [
-        (lon - minX) * scale,
-        size.height - (lat - minY) * scale // invert Y for SVG
-      ];
-    });
-  }
+  // Add OpenStreetMap tiles
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
 
-  function getBounds(features) {
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    features.forEach(f => {
-      f.geometry.coordinates.forEach(polygon => {
-        polygon.forEach(([lon, lat]) => {
-          if(lon < minX) minX = lon;
-          if(lon > maxX) maxX = lon;
-          if(lat < minY) minY = lat;
-          if(lat > maxY) maxY = lat;
-        });
-      });
-    });
-    return [minX, minY, maxX, maxY];
-  }
-
-  // Load your GeoJSON file
-  fetch('senedd2026.json')
-    .then(response => {
-      if(!response.ok) throw new Error('Network response not ok');
-      return response.json();
-    })
+  // Load your GeoJSON file asynchronously
+  fetch('senedd2026.geojson')
+    .then(response => response.json())
     .then(data => {
-      const features = data.features;
-      const bounds = getBounds(features);
-      const size = { width: width, height: height };
+      // Add GeoJSON layer to map
+      L.geoJSON(data, {
+        onEachFeature: function (feature, layer) {
+          if (feature.properties && feature.properties.name) {
+            layer.bindPopup(feature.properties.name);
+          }
+        }
+      }).addTo(map);
 
-      features.forEach(feature => {
-        // For each polygon, create an SVG path
-        feature.geometry.coordinates.forEach(polygon => {
-          const projected = project(polygon, bounds, size);
-          const pathData = "M" + projected.map(p => p.join(",")).join("L") + "Z";
-          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-          path.setAttribute("d", pathData);
-          svg.appendChild(path);
-        });
-      });
+      // Optional: Zoom map to GeoJSON layer bounds
+      var geojsonLayer = L.geoJSON(data);
+      map.fitBounds(geojsonLayer.getBounds());
     })
-    .catch(err => {
-      console.error("Error loading or parsing GeoJSON:", err);
-      svg.innerHTML = `<text x="10" y="20" fill="red">Error loading GeoJSON: ${err.message}</text>`;
-    });
+    .catch(err => console.error('Error loading GeoJSON:', err));
 </script>
+
 </body>
 </html>
