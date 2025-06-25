@@ -2,177 +2,104 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Find Your 2026 Senedd Constituency</title>
-  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Senedd Constituency Lookup</title>
   <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #fff;
-      color: #004978; /* ITV News dark blue */
-    }
     body {
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      align-items: flex-start; /* left align */
+      font-family: Arial, sans-serif;
+      margin: 0;
       padding: 1rem;
-      max-width: 700px;
-      box-sizing: border-box;
     }
-    .container {
-      width: 100%;
-      background-color: #fff;
-      border: 1px solid #004978; /* ITV News blue border */
-      padding: 1.5rem;
-      box-sizing: border-box;
-      box-shadow: none;
-      border-radius: 0; /* square corners */
+
+    .lookup-widget {
+      border: 1px solid #dcdcdc;
+      padding: 1rem;
+      max-width: 100%;
+      background-color: #f9f9f9;
+      color: #000;
       text-align: left;
     }
-    h2 {
-      color: #004978;
-      margin-bottom: 1rem;
-      font-weight: 700;
-      font-size: 1.5rem;
-    }
-    label {
-      display: block;
-      margin-bottom: 0.25rem;
-      font-weight: 600;
-    }
-    input[type="text"] {
+
+    .lookup-widget input {
       width: 100%;
       padding: 0.5rem;
-      font-size: 1rem;
-      border: 1px solid #004978;
-      border-radius: 0;
+      border: 1px solid #666;
+      margin-bottom: 0.5rem;
       box-sizing: border-box;
-      outline-offset: 2px;
+      border-radius: 0; /* square corners */
     }
-    input[type="text"]:focus {
-      outline: 2px solid #ff0000; /* ITV News red focus */
-    }
-    button[type="submit"] {
-      margin-top: 1rem;
-      background-color: #e4002b; /* ITV News red */
-      border: none;
-      padding: 0.6rem 1rem;
+
+    .lookup-widget button {
+      padding: 0.5rem 1rem;
+      background-color: #0055a5; /* ITV blue */
       color: white;
-      font-weight: 700;
+      border: none;
       cursor: pointer;
-      width: 100%;
       border-radius: 0;
-      font-size: 1rem;
     }
-    button[type="submit"]:hover {
-      background-color: #b30022;
+
+    .lookup-widget button:hover {
+      background-color: #003d7a;
     }
-    #result {
-      margin-top: 1.5rem;
-      font-weight: 600;
-      color: #004978;
+
+    .result {
+      margin-top: 1rem;
     }
-    a.const-name {
-      color: #e4002b; /* ITV News red for links */
-      font-weight: 700;
-      text-decoration: none;
-    }
-    a.const-name:hover {
-      text-decoration: underline;
-    }
+
     iframe.flourish-embed {
       width: 100%;
-      height: 320px;
+      height: 300px;
       border: none;
       margin-top: 1rem;
-    }
-    /* Small note about data source */
-    .data-source {
-      font-size: 0.8rem;
-      color: #666;
-      margin-top: 0.75rem;
     }
   </style>
 </head>
 <body>
-  <div class="container" role="region" aria-label="Senedd constituency lookup">
-    <h2>Find Your 2026 Senedd Constituency</h2>
-    <form id="lookup-form">
-      <label for="postcode">Enter your postcode:</label>
-      <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required aria-required="true" aria-describedby="postcode-desc" />
-      <div id="postcode-desc" style="font-size:0.8rem; color:#666; margin-top:0.2rem;">
-        Enter a Welsh postcode to find your constituency.
-      </div>
-      <button type="submit">Look up</button>
-    </form>
-    <div id="result" aria-live="polite"></div>
-    <div class="data-source">Data from Senedd Cymru/Welsh Parliament</div>
+  <div class="lookup-widget">
+    <label for="postcode">Enter your postcode:</label>
+    <input type="text" id="postcode" placeholder="e.g. CF10 1EP" />
+    <button onclick="lookupConstituency()">Find My Constituency</button>
+    <div class="result" id="result"></div>
   </div>
 
-  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
   <script>
-    (function() {
-      const form = document.getElementById('lookup-form');
+    async function lookupConstituency() {
+      const postcode = document.getElementById('postcode').value.trim();
       const resultDiv = document.getElementById('result');
-      let boundaries = null;
+      resultDiv.innerHTML = '';
 
-      // Load Senedd boundaries GeoJSON
-      fetch('senedd2026.json')
-        .then(res => res.json())
-        .then(data => {
-          boundaries = data;
-        })
-        .catch(() => {
-          resultDiv.textContent = 'Error loading constituency data.';
-        });
+      if (!postcode) {
+        resultDiv.innerText = 'Please enter a postcode.';
+        return;
+      }
 
-      form.addEventListener('submit', async e => {
-        e.preventDefault();
-        resultDiv.textContent = 'Looking up constituency…';
+      try {
+        const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
+        const data = await res.json();
 
-        const postcode = document.getElementById('postcode').value.trim();
-
-        try {
-          const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
-          const data = await res.json();
-
-          if (!data.result) throw new Error('Invalid postcode');
-          if (data.result.country !== 'Wales') {
-            resultDiv.textContent = 'Sorry, this tool only supports Welsh postcodes.';
-            return;
-          }
-
-          const { longitude, latitude } = data.result;
-          const userPoint = turf.point([longitude, latitude]);
-
-          // Find constituency polygon containing point
-          const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
-
-          if (!match) {
-            resultDiv.textContent = 'Could not find your constituency.';
-            return;
-          }
-
-          const constituencyName = match.properties.enw_cymrae;
-          const slug = constituencyName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-
-          // Flourish embed URL — replace YOUR_FLOURISH_VIS_ID with your real Flourish ID
-          const flourishVisId = '23652088';
-          const embedUrl = `https://public.flourish.studio/visualisation/${flourishVisId}/embed?highlight=${encodeURIComponent(constituencyName)}`;
-
-          // Build HTML result with link and embedded map iframe
-          resultDiv.innerHTML = `
-            <p>Your 2026 Senedd constituency is: <a href="cons/${slug}.html" class="const-name" target="_blank" rel="noopener">${constituencyName}</a></p>
-            <iframe class="flourish-embed" src="${embedUrl}" title="Map showing ${constituencyName} constituency"></iframe>
-          `;
-        } catch (err) {
-          resultDiv.textContent = 'Something went wrong. Please check your postcode and try again.';
-          console.error(err);
+        if (!data.result) {
+          resultDiv.innerText = 'Postcode not found.';
+          return;
         }
-      });
-    })();
+
+        const { parliamentary_constituency } = data.result;
+
+        resultDiv.innerHTML = `
+          <p>Your constituency is: <strong>${parliamentary_constituency}</strong></p>
+        `;
+
+        const iframe = document.createElement('iframe');
+        iframe.className = 'flourish-embed';
+        iframe.src = `https://public.flourish.studio/visualisation/23652088/embed?highlight=${encodeURIComponent(parliamentary_constituency)}`;
+        iframe.setAttribute('frameborder', '0');
+        iframe.setAttribute('scrolling', 'no');
+        resultDiv.appendChild(iframe);
+
+      } catch (err) {
+        resultDiv.innerText = 'Error looking up postcode.';
+        console.error(err);
+      }
+    }
   </script>
 </body>
 </html>
