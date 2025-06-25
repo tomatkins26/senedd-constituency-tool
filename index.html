@@ -17,10 +17,10 @@
       color: #000;
       display: flex;
       flex-direction: column;
-      justify-content: flex-start;
+      justify-content: flex-start; /* changed from center */
       align-items: center;
       min-height: 100vh;
-      padding-top: 1rem;
+      padding-top: 1rem; /* small gap at top */
     }
 
     .container {
@@ -32,7 +32,7 @@
       width: 90%;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       margin-bottom: 2rem;
-      margin-top: 0;
+      margin-top: 0; /* ensure no top margin */
       text-align: center;
     }
 
@@ -141,6 +141,20 @@
       transition: width 2.5s linear;
     }
 
+    /* New container for loaded constituency HTML */
+    #constituency-container {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      margin: 1rem auto 2rem auto;
+      text-align: left;
+      min-height: 100px; /* reserve some vertical space */
+    }
+
     footer {
       text-align: center;
       font-size: 0.7rem;
@@ -183,27 +197,12 @@
       color: #004a54;
     }
 
-    /* New container for constituency display */
-    #constituency-wrapper {
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 12px;
-      padding: 2rem;
-      max-width: 500px;
-      width: 90%;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      margin-bottom: 2rem;
-      margin-top: 0; /* no top margin to keep tight */
-      text-align: left; /* content inside left aligned */
-      display: none; /* hide until used */
-    }
-
     @media (max-width: 600px) {
       body {
         transform: scale(1.1);
         transform-origin: top center;
       }
-      .container, #constituency-wrapper {
+      .container {
         padding: 1.5rem;
       }
       input[type="text"],
@@ -240,10 +239,8 @@
     <div id="result"></div>
   </div>
 
-  <!-- New container for constituency HTML output -->
-  <div id="constituency-wrapper">
-    <div id="constituency-content"></div>
-  </div>
+  <!-- New container for constituency HTML -->
+  <div id="constituency-container" style="display:none;"></div>
 
   <footer>
     Data from Senedd Cymru/Welsh Parliament<br />
@@ -259,8 +256,7 @@
     const progressContainer = document.getElementById('progress-container');
     const progressBar = document.getElementById('progress-bar');
     const useLocationBtn = document.getElementById('use-location');
-    const constituencyWrapper = document.getElementById('constituency-wrapper');
-    const constituencyContent = document.getElementById('constituency-content');
+    const constituencyContainer = document.getElementById('constituency-container');
 
     let boundaries = null;
 
@@ -275,8 +271,8 @@
       e.preventDefault();
       const postcode = document.getElementById('postcode').value.trim();
       resultDiv.innerText = '';
-      constituencyWrapper.style.display = 'none';  // hide constituency content while loading
-      constituencyContent.innerHTML = '';
+      constituencyContainer.style.display = 'none';
+      constituencyContainer.innerHTML = '';
       progressBar.style.width = '0%';
       progressContainer.style.display = 'block';
       progressBar.offsetHeight; // trigger reflow
@@ -299,17 +295,28 @@
         const userPoint = turf.point([longitude, latitude]);
         const match = boundaries.features.find((f) => turf.booleanPointInPolygon(userPoint, f));
 
-        setTimeout(() => {
+        setTimeout(async () => {
           progressContainer.style.display = 'none';
           if (match) {
-            const html = `
-              <h3>Your 2026 Senedd constituency is:</h3>
-              <h2 style="color:#006473; margin-top:0;">${match.properties.enw_cymrae}</h2>
-              <p>${match.properties.description || ''}</p>
-              <!-- You can add more detailed info here if you want -->
-            `;
-            constituencyContent.innerHTML = html;
-            constituencyWrapper.style.display = 'block';
+            const slug = match.properties.enw_cymrae
+              .toLowerCase()
+              .replace(/\s+/g, '-')
+              .replace(/[^\w-]/g, '');
+            const url = `cons/${slug}.html`;
+
+            resultDiv.innerHTML = `Your 2026 Senedd constituency is: <span class="const-name">${match.properties.enw_cymrae}</span>`;
+
+            // Fetch and insert the constituency HTML into the container
+            try {
+              const htmlRes = await fetch(url);
+              if (!htmlRes.ok) throw new Error('Constituency page not found');
+              const htmlText = await htmlRes.text();
+              constituencyContainer.innerHTML = htmlText;
+              constituencyContainer.style.display = 'block';
+            } catch (err) {
+              constituencyContainer.innerHTML = '<p>Constituency details unavailable.</p>';
+              constituencyContainer.style.display = 'block';
+            }
           } else {
             resultDiv.innerText = 'Could not find your constituency.';
           }
@@ -330,8 +337,8 @@
       }
 
       resultDiv.innerText = '';
-      constituencyWrapper.style.display = 'none';
-      constituencyContent.innerHTML = '';
+      constituencyContainer.style.display = 'none';
+      constituencyContainer.innerHTML = '';
       progressBar.style.width = '0%';
       progressContainer.style.display = 'block';
       progressBar.offsetHeight; // trigger reflow
