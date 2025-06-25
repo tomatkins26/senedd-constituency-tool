@@ -213,31 +213,36 @@
       return cleaned.trim();
     }
 
+    // UPDATED addressSubmit click handler using Nominatim geocoding
     addressSubmit.addEventListener('click', async () => {
       const rawAddressLine = addressInput.value.trim();
       const postcode = document.getElementById('postcode').value.trim();
       if (!rawAddressLine || !postcode) return;
 
       const addressLine = cleanAddressLine(rawAddressLine, postcode);
+      const fullAddress = `${addressLine}, ${postcode}, Wales`;
 
       resultDiv.innerText = '';
       const interval = startProgress();
 
       try {
-        const apiKey = 'bIFf8Sc6M0WyEvHy31Vguw46656'; // Replace with your real key
-        const url = `https://api.getaddress.io/find/${encodeURIComponent(postcode)}/${encodeURIComponent(addressLine)}?api-key=${apiKey}`;
+        // Optional: you can still call getAddress.io here if you want to validate address or get suggestions
+        // but it doesn't return lat/lon, so not needed strictly
 
-        const res = await fetch(url);
-        const data = await res.json();
+        // Use Nominatim OSM geocoding to get lat/lon from full address
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`);
+        const geoData = await geoRes.json();
 
         clearInterval(interval);
 
-        if (!data.latitude || !data.longitude) {
+        if (!geoData || geoData.length === 0) {
           stopProgress('No coordinates returned from address lookup.');
           return;
         }
 
-        const userPoint = turf.point([parseFloat(data.longitude), parseFloat(data.latitude)]);
+        // Take first geocoded result
+        const { lat, lon } = geoData[0];
+        const userPoint = turf.point([parseFloat(lon), parseFloat(lat)]);
         const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
 
         if (match) {
