@@ -4,42 +4,56 @@
   <meta charset="UTF-8" />
   <title>Find Your 2026 Senedd Constituency</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="style.css" />
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
   <style>
-    /* Your existing CSS styles remain the same ... */
-
+    /* Additional styles for fallback UI */
     #address-section {
       margin-top: 1rem;
-      overflow: hidden;
-      max-height: 0;
       opacity: 0;
-      transition: max-height 0.5s ease, opacity 0.5s ease;
+      max-height: 0;
+      overflow: hidden;
+      transition: opacity 0.4s ease, max-height 0.4s ease;
     }
 
     #address-section.visible {
-      max-height: 200px;
       opacity: 1;
+      max-height: 300px;
     }
 
-    #address-line {
+    #address-section input,
+    #address-section button {
+      margin-top: 0.75rem;
+      font-size: 1rem;
+    }
+
+    #address-section input {
       width: 100%;
       padding: 0.75rem;
-      font-size: 1rem;
-      border: 1px solid #ccc;
       border-radius: 8px;
-      margin-bottom: 0.75rem;
+      border: 1px solid #ccc;
       box-sizing: border-box;
     }
 
-    #confirm-address {
-      background-color: #004a54;
-      color: #fff;
-      padding: 0.65rem 1rem;
-      font-size: 1rem;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
+    #address-section button {
       width: 100%;
+      padding: 0.75rem;
+      border-radius: 8px;
+      background-color: #006473;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.3s;
+    }
+
+    #address-section button:hover {
+      opacity: 0.85;
+    }
+
+    #address-warning {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: #cc0000;
     }
   </style>
 </head>
@@ -51,7 +65,6 @@
       <div class="postcode-wrapper">
         <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required />
         <button type="button" id="use-location" class="icon-button" title="Use my current location" aria-label="Use my current location">
-          <!-- SVG icon -->
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
           </svg>
@@ -61,9 +74,9 @@
     </form>
 
     <div id="address-section">
-      <label for="address-line">Please enter your first line of address:</label>
-      <input type="text" id="address-line" placeholder="e.g. 10 Downing Street" />
-      <button id="confirm-address">Confirm Address</button>
+      <div id="address-warning">You're near a boundary. Please enter your address line for better accuracy:</div>
+      <input type="text" id="address-line" placeholder="e.g. 10 Queen Street" />
+      <button id="address-submit">Submit Address</button>
     </div>
 
     <div class="progress-container" id="progress-container">
@@ -89,108 +102,83 @@
     const useLocationBtn = document.getElementById('use-location');
     const addressSection = document.getElementById('address-section');
     const addressInput = document.getElementById('address-line');
-    const confirmAddressBtn = document.getElementById('confirm-address');
-
+    const addressSubmit = document.getElementById('address-submit');
     let boundaries = null;
-    let postcodeCoords = null;
-    let postcodeValue = null;
+    let lastPostcodeCoords = null;
 
     fetch('senedd2026.json')
       .then(res => res.json())
-      .then(data => {
-        boundaries = data;
-      })
-      .catch(err => resultDiv.innerText = 'Error loading constituency data.');
+      .then(data => boundaries = data)
+      .catch(err => (resultDiv.innerText = 'Error loading constituency data.'));
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      postcodeValue = document.getElementById('postcode').value.trim();
+      const postcode = document.getElementById('postcode').value.trim();
       resultDiv.innerText = '';
-      progressBar.style.width = '0%';
-      progressContainer.style.display = 'block';
-      progressBar.offsetHeight;
-      progressBar.style.width = '100%';
+      hideAddressFallback();
+      startProgress();
 
       try {
-        const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcodeValue)}`);
+        const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
         const data = await res.json();
         if (!data.result) throw new Error('Invalid postcode');
-
         const { longitude, latitude, country } = data.result;
-        postcodeCoords = [longitude, latitude];
 
         if (country !== 'Wales') {
-          setTimeout(() => {
-            progressContainer.style.display = 'none';
-            resultDiv.innerText = 'This tool only supports Welsh postcodes.';
-          }, 2500);
+          stopProgress('This tool only supports Welsh postcodes.');
           return;
         }
 
-        const userPoint = turf.point(postcodeCoords);
+        lastPostcodeCoords = [longitude, latitude];
+        const userPoint = turf.point(lastPostcodeCoords);
         const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
 
-        if (!match) {
-          resultDiv.innerText = 'Could not find your constituency.';
-          progressContainer.style.display = 'none';
-          return;
+        if (match) {
+          const nearest = turf.nearestPointOnLine(turf.lineString(
+            turf.getCoords(f => f === match)[0] // quick way to get one polygon ring
+          ), userPoint);
+          const dist = turf.distance(userPoint, nearest, { units: 'kilometers' });
+
+          if (dist <= 1) {
+            showAddressFallback();
+            stopProgress();
+          } else {
+            renderConstituency(match);
+          }
+        } else {
+          stopProgress('Could not find your constituency.');
         }
-
-        const minDistance = Math.min(...boundaries.features.map(f => {
-          const line = turf.polygonToLine(f);
-          return turf.pointToLineDistance(userPoint, line, { units: 'kilometers' });
-        }));
-
-        if (minDistance < 1) {
-          addressSection.classList.add('visible');
-        }
-
-        setTimeout(() => {
-          progressContainer.style.display = 'none';
-          const slug = match.properties.enw_cymrae.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-          const url = `cons/${slug}.html`;
-          resultDiv.innerHTML = `Your 2026 Senedd constituency is: <a href="${url}" class="const-name">${match.properties.enw_cymrae}</a>`;
-        }, 2500);
       } catch (err) {
         console.error(err);
-        progressContainer.style.display = 'none';
-        resultDiv.innerText = 'Something went wrong. Please try again.';
+        stopProgress('Something went wrong. Please try again.');
       }
     });
 
-    confirmAddressBtn.addEventListener('click', async () => {
-      const line = addressInput.value.trim();
-      if (!line || !postcodeValue) return;
+    addressSubmit.addEventListener('click', async () => {
+      const addressLine = addressInput.value.trim();
+      const postcode = document.getElementById('postcode').value.trim();
+      if (!addressLine || !postcode) return;
 
-      resultDiv.innerText = 'Improving precision using your address...';
+      resultDiv.innerText = '';
+      startProgress();
+
       try {
-        const res = await fetch(`https://api.getaddress.io/find/${postcodeValue}/${encodeURIComponent(line)}?api-key=bIFf8Sc6M0WyEvHy31Vguw46656`);
+        const apiKey = 'bIFf8Sc6M0WyEvHy31Vguw46656'; // replace with actual key
+        const res = await fetch(`https://api.getaddress.io/find/${postcode}/${encodeURIComponent(addressLine)}?api-key=${apiKey}`);
         const data = await res.json();
 
-        if (!data || !data.addresses || data.addresses.length === 0) {
-          resultDiv.innerText = 'Could not find a precise match for that address.';
-          return;
-        }
-
-        const best = data.addresses[0];
-        if (!best.latitude || !best.longitude) {
-          resultDiv.innerText = 'No coordinate data found for that address.';
-          return;
-        }
-
-        const point = turf.point([parseFloat(best.longitude), parseFloat(best.latitude)]);
-        const match = boundaries.features.find(f => turf.booleanPointInPolygon(point, f));
+        if (!data.latitude || !data.longitude) throw new Error('No coordinates returned');
+        const userPoint = turf.point([parseFloat(data.longitude), parseFloat(data.latitude)]);
+        const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
 
         if (match) {
-          const slug = match.properties.enw_cymrae.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-          const url = `cons/${slug}.html`;
-          resultDiv.innerHTML = `✅ Confirmed with address: <a href="${url}" class="const-name">${match.properties.enw_cymrae}</a>`;
+          renderConstituency(match);
         } else {
-          resultDiv.innerText = 'Could not confirm your constituency from address.';
+          stopProgress('Could not find your constituency from address.');
         }
       } catch (err) {
         console.error(err);
-        resultDiv.innerText = 'Address lookup failed. Please try again.';
+        stopProgress('Address lookup failed.');
       }
     });
 
@@ -201,10 +189,8 @@
       }
 
       resultDiv.innerText = '';
-      progressBar.style.width = '0%';
-      progressContainer.style.display = 'block';
-      progressBar.offsetHeight;
-      progressBar.style.width = '100%';
+      hideAddressFallback();
+      startProgress();
 
       navigator.geolocation.getCurrentPosition(async (position) => {
         try {
@@ -213,21 +199,48 @@
           const data = await res.json();
 
           if (!data.result || data.result.length === 0) throw new Error('Could not find postcode');
-
           const postcode = data.result[0].postcode;
           document.getElementById('postcode').value = postcode;
           form.dispatchEvent(new Event('submit'));
         } catch (err) {
-          progressContainer.style.display = 'none';
-          resultDiv.innerText = 'Could not find postcode from your location.';
+          stopProgress('Could not find postcode from your location.');
         }
       }, () => {
-        progressContainer.style.display = 'none';
+        stopProgress();
         alert('Unable to retrieve your location.');
       });
     });
 
-    // Toggle privacy info
+    function renderConstituency(feature) {
+      const slug = feature.properties.enw_cymrae.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+      const url = `cons/${slug}.html`;
+      stopProgress(`Your 2026 Senedd constituency is: <a href="${url}" class="const-name">${feature.properties.enw_cymrae}</a>`);
+    }
+
+    function showAddressFallback() {
+      addressSection.classList.add('visible');
+    }
+
+    function hideAddressFallback() {
+      addressSection.classList.remove('visible');
+      addressInput.value = '';
+    }
+
+    function startProgress() {
+      progressBar.style.width = '0%';
+      progressContainer.style.display = 'block';
+      progressBar.offsetHeight;
+      progressBar.style.width = '100%';
+    }
+
+    function stopProgress(message = '') {
+      setTimeout(() => {
+        progressContainer.style.display = 'none';
+        if (message) resultDiv.innerHTML = message;
+      }, 2000);
+    }
+
+    // Footer info toggle
     const toggleBtn = document.getElementById('toggle-info-btn');
     const toggleSpan = toggleBtn.querySelector('span');
     const infoText = document.getElementById('info-text');
