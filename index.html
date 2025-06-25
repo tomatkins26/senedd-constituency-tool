@@ -32,6 +32,7 @@
       width: 90%;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       margin-bottom: 2rem;
+      margin-top: 0;
       text-align: center;
     }
 
@@ -140,19 +141,6 @@
       transition: width 2.5s linear;
     }
 
-    #constituency-content {
-      background: #f8f9fa;
-      border: 1px solid #ccc;
-      border-radius: 12px;
-      padding: 1.5rem;
-      max-width: 500px;
-      width: 90%;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      margin-bottom: 2rem;
-      text-align: left;
-      display: none;
-    }
-
     footer {
       text-align: center;
       font-size: 0.7rem;
@@ -195,12 +183,27 @@
       color: #004a54;
     }
 
+    /* New container for constituency display */
+    #constituency-wrapper {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      margin-bottom: 2rem;
+      margin-top: 0; /* no top margin to keep tight */
+      text-align: left; /* content inside left aligned */
+      display: none; /* hide until used */
+    }
+
     @media (max-width: 600px) {
       body {
         transform: scale(1.1);
         transform-origin: top center;
       }
-      .container {
+      .container, #constituency-wrapper {
         padding: 1.5rem;
       }
       input[type="text"],
@@ -237,8 +240,10 @@
     <div id="result"></div>
   </div>
 
-  <!-- New container for loading constituency HTML -->
-  <div id="constituency-content"></div>
+  <!-- New container for constituency HTML output -->
+  <div id="constituency-wrapper">
+    <div id="constituency-content"></div>
+  </div>
 
   <footer>
     Data from Senedd Cymru/Welsh Parliament<br />
@@ -247,14 +252,15 @@
     </div>
     <button id="toggle-info-btn"><span>Privacy information</span></button>
   </footer>
-
+  
   <script>
     const form = document.getElementById('lookup-form');
     const resultDiv = document.getElementById('result');
     const progressContainer = document.getElementById('progress-container');
     const progressBar = document.getElementById('progress-bar');
     const useLocationBtn = document.getElementById('use-location');
-    const constituencyContainer = document.getElementById('constituency-content');
+    const constituencyWrapper = document.getElementById('constituency-wrapper');
+    const constituencyContent = document.getElementById('constituency-content');
 
     let boundaries = null;
 
@@ -269,8 +275,8 @@
       e.preventDefault();
       const postcode = document.getElementById('postcode').value.trim();
       resultDiv.innerText = '';
-      constituencyContainer.style.display = 'none';
-      constituencyContainer.innerHTML = '';
+      constituencyWrapper.style.display = 'none';  // hide constituency content while loading
+      constituencyContent.innerHTML = '';
       progressBar.style.width = '0%';
       progressContainer.style.display = 'block';
       progressBar.offsetHeight; // trigger reflow
@@ -296,32 +302,16 @@
         setTimeout(() => {
           progressContainer.style.display = 'none';
           if (match) {
-            const slug = match.properties.enw_cymrae
-              .toLowerCase()
-              .replace(/\s+/g, '-')
-              .replace(/[^\w-]/g, '');
-
-            const url = `cons/${slug}.html`;
-
-            // Fetch and show constituency HTML inside container
-            fetch(url)
-              .then(res => {
-                if (!res.ok) throw new Error('Constituency page not found');
-                return res.text();
-              })
-              .then(html => {
-                constituencyContainer.innerHTML = html;
-                constituencyContainer.style.display = 'block';
-
-                resultDiv.innerHTML = `Your 2026 Senedd constituency is: <strong>${match.properties.enw_cymrae}</strong>`;
-              })
-              .catch(() => {
-                resultDiv.innerText = 'Could not load constituency details.';
-                constituencyContainer.style.display = 'none';
-              });
+            const html = `
+              <h3>Your 2026 Senedd constituency is:</h3>
+              <h2 style="color:#006473; margin-top:0;">${match.properties.enw_cymrae}</h2>
+              <p>${match.properties.description || ''}</p>
+              <!-- You can add more detailed info here if you want -->
+            `;
+            constituencyContent.innerHTML = html;
+            constituencyWrapper.style.display = 'block';
           } else {
             resultDiv.innerText = 'Could not find your constituency.';
-            constituencyContainer.style.display = 'none';
           }
         }, 2500);
       } catch (err) {
@@ -329,7 +319,6 @@
         setTimeout(() => {
           progressContainer.style.display = 'none';
           resultDiv.innerText = 'Something went wrong. Please try again.';
-          constituencyContainer.style.display = 'none';
         }, 2500);
       }
     });
@@ -341,8 +330,8 @@
       }
 
       resultDiv.innerText = '';
-      constituencyContainer.style.display = 'none';
-      constituencyContainer.innerHTML = '';
+      constituencyWrapper.style.display = 'none';
+      constituencyContent.innerHTML = '';
       progressBar.style.width = '0%';
       progressContainer.style.display = 'block';
       progressBar.offsetHeight; // trigger reflow
