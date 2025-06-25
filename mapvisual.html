@@ -1,82 +1,246 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8" /><title>Test Simple GeoJSON SVG</title></head>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Senedd 2026 SVG Map</title>
+<style>
+  body, html {
+    margin: 0; padding: 0; height: 100vh; overflow: hidden;
+    display: flex; justify-content: center; align-items: center;
+    background: #f0f0f0;
+    user-select: none;
+  }
+  svg {
+    border: 1px solid #ccc;
+    background: white;
+    touch-action: none; /* prevent default touch gestures */
+  }
+  polygon {
+    cursor: pointer;
+    transition: fill 0.3s ease;
+    stroke: white;
+    stroke-width: 1.5;
+    fill: #0B3D91; /* ITV News dark blue */
+  }
+  polygon:hover {
+    fill: #E4002B; /* ITV News red on hover */
+  }
+  #tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 4px 8px;
+    font-family: sans-serif;
+    font-size: 14px;
+    border-radius: 4px;
+    white-space: nowrap;
+    display: none;
+  }
+</style>
+</head>
 <body>
-<svg id="map" width="600" height="400" style="border:1px solid #ccc;">
-  <g id="content"></g>
-</svg>
+
+<svg id="map" width="90vw" height="90vh" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet"></svg>
+<div id="tooltip"></div>
+
 <script>
+(() => {
   const svg = document.getElementById('map');
-  const content = document.getElementById('content');
-  const width = svg.clientWidth;
-  const height = svg.clientHeight;
+  const tooltip = document.getElementById('tooltip');
 
-  // Simple GeoJSON with one square polygon
-  const data = {
-    "type": "FeatureCollection",
-    "features": [{
-      "type": "Feature",
-      "properties": {"name": "Test Area"},
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[
-          [-1, 51],
-          [-1, 52],
-          [0, 52],
-          [0, 51],
-          [-1, 51]
-        ]]
+  // Group to hold polygons, will be transformed for zoom/pan
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  svg.appendChild(g);
+
+  // Variables for zoom and pan
+  let zoom = 1;
+  let offsetX = 0;
+  let offsetY = 0;
+  let isDragging = false;
+  let dragStart = null;
+
+  // Load GeoJSON
+  fetch('senedd2026.json')
+    .then(res => res.json())
+    .then(data => {
+      drawMap(data);
+    })
+    .catch(err => {
+      console.error('Failed to load GeoJSON:', err);
+      alert('Failed to load GeoJSON file. Make sure senedd2026.json is in the same folder.');
+    });
+
+  function drawMap(data) {
+    // 1. Extract all coordinates to find bounds
+    let allCoords = [];
+    data.features.forEach(feature => {
+      const geom = feature.geometry;
+      if (geom.type === 'Polygon') {
+        geom.coordinates.forEach(ring => ring.forEach(coord => allCoords.push(coord)));
+      } else if (geom.type === 'MultiPolygon') {
+        geom.coordinates.forEach(polygon => polygon.forEach(ring => ring.forEach(coord => allCoords.push(coord))));
       }
-    }]
-  };
+    });
 
-  // Calculate bounds
-  let lons = [], lats = [];
-  data.features.forEach(f => f.geometry.coordinates[0].forEach(([lon,lat]) => {
-    lons.push(lon); lats.push(lat);
-  }));
-  const lonMin = Math.min(...lons);
-  const lonMax = Math.max(...lons);
-  const latMin = Math.min(...lats);
-  const latMax = Math.max(...lats);
+    const lons = allCoords.map(c => c[0]);
+    const lats = allCoords.map(c => c[1]);
+    const lonMin = Math.min(...lons);
+    const lonMax = Math.max(...lons);
+    const latMin = Math.min(...lats);
+    const latMax = Math.max(...lats);
 
-  // Scale and offset
-  const geoWidth = lonMax - lonMin;
-  const geoHeight = latMax - latMin;
-  const scaleX = width / geoWidth;
-  const scaleY = height / geoHeight;
-  const scale = Math.min(scaleX, scaleY);
-  const offsetX = (width - geoWidth * scale) / 2;
-  const offsetY = (height - geoHeight * scale) / 2;
+    // Calculate scale to fit into SVG viewBox (1000x700)
+    const geoWidth = lonMax - lonMin;
+    const geoHeight = latMax - latMin;
+    const viewWidth = 1000;
+    const viewHeight = 700;
 
-  function project([lon, lat]) {
-    const x = (lon - lonMin) * scale + offsetX;
-    const y = height - ((lat - latMin) * scale + offsetY);
-    return [x, y];
+    const scaleX = viewWidth / geoWidth;
+    const scaleY = viewHeight / geoHeight;
+    const scale = Math.min(scaleX, scaleY) * 0.95; // small margin
+
+    // Offsets to center map in viewBox
+    const offsetXGeo = (viewWidth - geoWidth * scale) / 2;
+    const offsetYGeo = (viewHeight - geoHeight * scale) / 2;
+
+    // Projection function (lon/lat to SVG coordinates)
+    function project([lon, lat]) {
+      const x = (lon - lonMin) * scale + offsetXGeo;
+      const y = viewHeight - ((lat - latMin) * scale + offsetYGeo);
+      return [x, y];
+    }
+
+    // Create SVG path string from coordinates
+    function coordsToPath(coords) {
+      return coords.map(point => project(point).join(',')).join(' ');
+    }
+
+    // Draw each constituency polygon
+    data.features.forEach(feature => {
+      const geom = feature.geometry;
+      const name = feature.properties?.name || 'Unknown';
+
+      if (geom.type === 'Polygon') {
+        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        polygon.setAttribute('points', coordsToPath(geom.coordinates[0]));
+        polygon.setAttribute('fill', '#0B3D91');
+        polygon.setAttribute('stroke', 'white');
+        polygon.setAttribute('stroke-width', 1.5);
+
+        polygon.addEventListener('mouseenter', () => {
+          polygon.setAttribute('fill', '#E4002B');
+          showTooltip(name);
+        });
+        polygon.addEventListener('mouseleave', () => {
+          polygon.setAttribute('fill', '#0B3D91');
+          hideTooltip();
+        });
+        polygon.addEventListener('mousemove', e => {
+          moveTooltip(e.clientX, e.clientY);
+        });
+
+        g.appendChild(polygon);
+      }
+      else if (geom.type === 'MultiPolygon') {
+        geom.coordinates.forEach(polygonCoords => {
+          const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+          polygon.setAttribute('points', coordsToPath(polygonCoords[0]));
+          polygon.setAttribute('fill', '#0B3D91');
+          polygon.setAttribute('stroke', 'white');
+          polygon.setAttribute('stroke-width', 1.5);
+
+          polygon.addEventListener('mouseenter', () => {
+            polygon.setAttribute('fill', '#E4002B');
+            showTooltip(name);
+          });
+          polygon.addEventListener('mouseleave', () => {
+            polygon.setAttribute('fill', '#0B3D91');
+            hideTooltip();
+          });
+          polygon.addEventListener('mousemove', e => {
+            moveTooltip(e.clientX, e.clientY);
+          });
+
+          g.appendChild(polygon);
+        });
+      }
+    });
   }
 
-  function createPath(coords) {
-    return coords.map(point => {
-      const [x, y] = project(point);
-      return `${x},${y}`;
-    }).join(' ');
+  // Tooltip functions
+  function showTooltip(text) {
+    tooltip.style.display = 'block';
+    tooltip.textContent = text;
+  }
+  function moveTooltip(x, y) {
+    const padding = 10;
+    const tooltipRect = tooltip.getBoundingClientRect();
+    let left = x + padding;
+    let top = y + padding;
+
+    if (left + tooltipRect.width > window.innerWidth) {
+      left = x - tooltipRect.width - padding;
+    }
+    if (top + tooltipRect.height > window.innerHeight) {
+      top = y - tooltipRect.height - padding;
+    }
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+  }
+  function hideTooltip() {
+    tooltip.style.display = 'none';
   }
 
-  data.features.forEach(feature => {
-    const coords = feature.geometry.coordinates[0];
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-    path.setAttribute('points', createPath(coords));
-    path.setAttribute('fill', '#002D72');
-    path.setAttribute('stroke', 'white');
-    path.setAttribute('stroke-width', 2);
-    path.addEventListener('mouseover', () => {
-      path.setAttribute('fill', '#E4002B');
-    });
-    path.addEventListener('mouseout', () => {
-      path.setAttribute('fill', '#002D72');
-    });
-    content.appendChild(path);
+  // Zoom and pan handlers
+  svg.addEventListener('wheel', e => {
+    e.preventDefault();
+    const zoomIntensity = 0.1;
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const cursorpt = pt.matrixTransform(g.getCTM().inverse());
+
+    const direction = e.deltaY > 0 ? 1 : -1;
+    const factor = (1 - direction * zoomIntensity);
+
+    zoom *= factor;
+    zoom = Math.min(Math.max(zoom, 0.5), 10);
+
+    // Adjust offset to zoom on mouse position
+    offsetX = cursorpt.x - (cursorpt.x - offsetX) * factor;
+    offsetY = cursorpt.y - (cursorpt.y - offsetY) * factor;
+
+    updateTransform();
+  }, { passive: false });
+
+  svg.addEventListener('mousedown', e => {
+    isDragging = true;
+    dragStart = { x: e.clientX, y: e.clientY };
   });
+  window.addEventListener('mouseup', () => {
+    isDragging = false;
+  });
+  window.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    e.preventDefault();
+
+    const dx = (e.clientX - dragStart.x) / zoom;
+    const dy = (e.clientY - dragStart.y) / zoom;
+    offsetX += dx;
+    offsetY += dy;
+    dragStart = { x: e.clientX, y: e.clientY };
+
+    updateTransform();
+  });
+
+  function updateTransform() {
+    g.setAttribute('transform', `translate(${offsetX} ${offsetY}) scale(${zoom})`);
+  }
+
+})();
 </script>
+
 </body>
 </html>
