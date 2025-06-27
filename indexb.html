@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html>Add commentMore actions
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -172,35 +172,11 @@
       const constituencyName = match.properties.enw_cymrae;
       const slug = constituencyName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
 
-     resultDiv.innerHTML = `
-  <p>Your 2026 Senedd constituency is: <a href="cons/${slug}.html" class="const-name" target="_blank" rel="noopener">${constituencyName}</a></p>
-  <img src="images/${slug}.svg" alt="Map of ${constituencyName} constituency" style="width:100%; margin-top:1rem;" />
-  <div id="summary" style="margin-top:1rem; font-size:0.95rem; color:#444;"></div>
-`;
+      resultDiv.innerHTML = `
+        <p>Your 2026 Senedd constituency is: <a href="cons/${slug}.html" class="const-name" target="_blank" rel="noopener">${constituencyName}</a></p>
+        <div id="svg-map" style="width:100%; margin-top:1rem;"></div>
+      `;
 
-// Fetch summary paragraph from constituency page
-try {
-  const res = await fetch(`cons/${slug}.html`);
-  const html = await res.text();
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
-
-  // Find the <h2>About ...</h2>
-  const h2s = [...doc.querySelectorAll('h2')];
-  const aboutHeading = h2s.find(h2 => h2.textContent.trim().toLowerCase().startsWith('about'));
-  if (aboutHeading) {
-    // Get the next paragraph sibling
-    let next = aboutHeading.nextElementSibling;
-    while (next && next.tagName !== 'P') {
-      next = next.nextElementSibling;
-    }
-    if (next) {
-      document.getElementById('summary').textContent = next.textContent.trim();
-    }
-  }
-} catch (e) {
-  console.warn('Could not load summary.':', e);
-}
       const svgContainer = document.getElementById('svg-map');
 
       try {
