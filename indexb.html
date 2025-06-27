@@ -177,13 +177,17 @@
           svgContainer.innerHTML = svgText;
 
           const svgElement = svgContainer.querySelector('svg');
-          if (svgElement) {
+         if (svgElement) {
   svgElement.querySelectorAll('g[id]').forEach(g => {
     const rawId = g.getAttribute('id');
-    if (rawId && !g.querySelector('title')) {
-      const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-      title.textContent = rawId.replace(/-/g, ' ');
-      g.appendChild(title);
+    if (rawId) {
+      g.querySelectorAll('path, polygon, rect, circle').forEach(shape => {
+        if (!shape.querySelector('title')) {
+          const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+          title.textContent = rawId.replace(/-/g, ' ');
+          shape.appendChild(title);
+        }
+      });
     }
   });
 }
