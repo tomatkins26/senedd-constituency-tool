@@ -10,7 +10,7 @@
       margin: 0;
       font-family: Arial, sans-serif;
       background-color: #fff;
-      color: #28394e; /* updated text color */
+      color: #28394e;
     }
     body {
       display: flex;
@@ -24,8 +24,6 @@
     .container {
       width: 100%;
       background-color: #fff;
-      border: 0px solid #006473; /* updated blue-green border */
-      border: 0px solid #006473; /* updated blue-green border */
       padding: 1.5rem;
       box-sizing: border-box;
       box-shadow: none;
@@ -44,7 +42,7 @@
       font-weight: 600;
     }
     input[type="text"] {
-      width: calc(100% - 40px); /* leave room for location button */
+      width: calc(100% - 40px);
       padding: 0.5rem;
       font-size: 1rem;
       border: 1px solid #006473;
@@ -76,13 +74,9 @@
       font-weight: 600;
       color: #28394e;
     }
-    a.const-name {
+    .const-highlight {
       color: #006473;
       font-weight: 700;
-      text-decoration: none;
-    }
-    a.const-name:hover {
-      text-decoration: underline;
     }
     iframe.flourish-embed {
       width: 100%;
@@ -95,8 +89,6 @@
       color: #666;
       margin-top: 0.75rem;
     }
-
-    /* New styles for location button */
     #location-btn {
       display: inline-block;
       vertical-align: middle;
@@ -123,7 +115,7 @@
       <label for="postcode">Enter your postcode:</label>
       <div style="display:flex; align-items:center;">
         <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required aria-required="true" aria-describedby="postcode-desc" />
-        <svg id="location-btn" role="button" tabindex="0" aria-label="Find my current location" viewBox="0 0 24 24" >
+        <svg id="location-btn" role="button" tabindex="0" aria-label="Find my current location" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="8" fill="none" />
           <circle cx="12" cy="12" r="4" />
         </svg>
@@ -138,141 +130,140 @@
   </div>
 
   <script>
-  (function() {
-    const form = document.getElementById('lookup-form');
-    const resultDiv = document.getElementById('result');
-    const locationBtn = document.getElementById('location-btn');
-    let boundaries = null;
+    (function () {
+      const form = document.getElementById('lookup-form');
+      const resultDiv = document.getElementById('result');
+      const locationBtn = document.getElementById('location-btn');
+      let boundaries = null;
 
-    // Load Senedd boundaries
-    fetch('senedd2026.json')
-      .then(res => res.json())
-      .then(data => {
-        boundaries = data;
-      })
-      .catch(() => {
-        resultDiv.textContent = 'Error loading constituency data.';
-      });
-
-    async function lookupByCoords(longitude, latitude) {
-      if (!boundaries) {
-        resultDiv.textContent = 'Constituency data not loaded yet.';
-        return;
-      }
-      resultDiv.textContent = 'Looking up constituency…';
-
-      const userPoint = turf.point([longitude, latitude]);
-      const match = boundaries.features.find(feature => turf.booleanPointInPolygon(userPoint, feature));
-
-      if (!match) {
-        resultDiv.textContent = 'Could not find your constituency.';
-        return;
-      }
-
-      const constituencyName = match.properties.enw_cymrae;
-      const slug = constituencyName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-
-    resultDiv.innerHTML = `
-  <p>Your 2026 Senedd constituency is: <span class="const-name">${constituencyName}</span></p>
-  <div id="svg-map" style="width:100%; margin-top:1rem;"></div>
-`;
-
-      const svgContainer = document.getElementById('svg-map');
-
-      try {
-        const svgRes = await fetch(`svg/${slug}.svg`);
-        if (!svgRes.ok) throw new Error('SVG not found');
-        const svgText = await svgRes.text();
-        svgContainer.innerHTML = svgText;
-
-        const svgElement = svgContainer.querySelector('svg');
-
-        // Optional interactivity
-        const targetPath = svgElement?.querySelector('.highlight');
-        if (targetPath) {
-          targetPath.style.stroke = '#ffcc00';
-          targetPath.style.strokeWidth = '4';
-          targetPath.style.fill = '#fff0b3';
-        }
-
-        svgElement?.querySelectorAll('path').forEach(path => {
-          path.addEventListener('mouseenter', () => {
-            path.style.opacity = 0.7;
-          });
-          path.addEventListener('mouseleave', () => {
-            path.style.opacity = 1;
-          });
+      fetch('senedd2026.json')
+        .then(res => res.json())
+        .then(data => {
+          boundaries = data;
+        })
+        .catch(() => {
+          resultDiv.textContent = 'Error loading constituency data.';
         });
-      } catch (svgErr) {
-        svgContainer.innerHTML = '<p style="color:red;">Could not load map for this constituency.</p>';
-        console.error(svgErr);
-      }
-    }
 
-    async function lookupByPostcode(postcode) {
-      resultDiv.textContent = 'Looking up constituency…';
-      try {
-        const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
-        const data = await res.json();
+      async function lookupByCoords(longitude, latitude) {
+        if (!boundaries) {
+          resultDiv.textContent = 'Constituency data not loaded yet.';
+          return;
+        }
+        resultDiv.textContent = 'Looking up constituency…';
 
-        if (!data.result) throw new Error('Invalid postcode');
-        if (data.result.country !== 'Wales') {
-          resultDiv.textContent = 'Sorry, this tool only supports Welsh postcodes.';
+        const userPoint = turf.point([longitude, latitude]);
+        const match = boundaries.features.find(feature => turf.booleanPointInPolygon(userPoint, feature));
+
+        if (!match) {
+          resultDiv.textContent = 'Could not find your constituency.';
           return;
         }
 
-        const { longitude, latitude } = data.result;
-        await lookupByCoords(longitude, latitude);
-      } catch (err) {
-        resultDiv.textContent = 'Something went wrong. Please check your postcode and try again.';
-        console.error(err);
-      }
-    }
+        const constituencyName = match.properties.enw_cymrae;
+        const slug = constituencyName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
 
-    form.addEventListener('submit', async e => {
-      e.preventDefault();
-      const postcode = document.getElementById('postcode').value.trim();
-      await lookupByPostcode(postcode);
-    });
+        resultDiv.innerHTML = `
+          <p>Your 2026 Senedd constituency is: <span class="const-highlight">${constituencyName}</span></p>
+          <div id="svg-map" style="width:100%; margin-top:1rem;"></div>
+        `;
 
-    locationBtn.addEventListener('click', () => {
-      if (!navigator.geolocation) {
-        resultDiv.textContent = 'Geolocation is not supported by your browser.';
-        return;
-      }
-      resultDiv.textContent = 'Getting your location…';
-      navigator.geolocation.getCurrentPosition(
-        async position => {
-          const { longitude, latitude } = position.coords;
+        const svgContainer = document.getElementById('svg-map');
 
-          try {
-            const res = await fetch(`https://api.postcodes.io/postcodes?lon=${longitude}&lat=${latitude}`);
-            const data = await res.json();
+        try {
+          const svgRes = await fetch(`svg/${slug}.svg`);
+          if (!svgRes.ok) throw new Error('SVG not found');
+          const svgText = await svgRes.text();
+          svgContainer.innerHTML = svgText;
 
-            if (data.status === 200 && data.result && data.result.length > 0) {
-              const postcode = data.result[0].postcode;
-              document.getElementById('postcode').value = postcode;
-              await lookupByCoords(longitude, latitude);
-            } else {
-              resultDiv.textContent = 'Could not determine postcode from your location.';
-            }
-          } catch (err) {
-            resultDiv.textContent = 'Error retrieving postcode from location.';
-            console.error(err);
+          const svgElement = svgContainer.querySelector('svg');
+          const targetPath = svgElement?.querySelector('.highlight');
+          if (targetPath) {
+            targetPath.style.stroke = '#ffcc00';
+            targetPath.style.strokeWidth = '4';
+            targetPath.style.fill = '#fff0b3';
           }
-        },
-        err => {
-          resultDiv.textContent = 'Unable to retrieve your location.';
+
+          svgElement?.querySelectorAll('path').forEach(path => {
+            path.addEventListener('mouseenter', () => {
+              path.style.opacity = 0.7;
+            });
+            path.addEventListener('mouseleave', () => {
+              path.style.opacity = 1;
+            });
+          });
+        } catch (svgErr) {
+          svgContainer.innerHTML = '<p style="color:red;">Could not load map for this constituency.</p>';
+          console.error(svgErr);
+        }
+      }
+
+      async function lookupByPostcode(postcode) {
+        resultDiv.textContent = 'Looking up constituency…';
+        try {
+          const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
+          const data = await res.json();
+
+          if (!data.result) throw new Error('Invalid postcode');
+          if (data.result.country !== 'Wales') {
+            resultDiv.textContent = 'Sorry, this tool only supports Welsh postcodes.';
+            return;
+          }
+
+          const { longitude, latitude } = data.result;
+          await lookupByCoords(longitude, latitude);
+        } catch (err) {
+          resultDiv.textContent = 'Something went wrong. Please check your postcode and try again.';
           console.error(err);
         }
-      );
-    });
-
-    locationBtn.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        locationBtn.click();
       }
-    });
-  })();
-</script>
+
+      form.addEventListener('submit', async e => {
+        e.preventDefault();
+        const postcode = document.getElementById('postcode').value.trim();
+        await lookupByPostcode(postcode);
+      });
+
+      locationBtn.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+          resultDiv.textContent = 'Geolocation is not supported by your browser.';
+          return;
+        }
+        resultDiv.textContent = 'Getting your location…';
+        navigator.geolocation.getCurrentPosition(
+          async position => {
+            const { longitude, latitude } = position.coords;
+
+            try {
+              const res = await fetch(`https://api.postcodes.io/postcodes?lon=${longitude}&lat=${latitude}`);
+              const data = await res.json();
+
+              if (data.status === 200 && data.result && data.result.length > 0) {
+                const postcode = data.result[0].postcode;
+                document.getElementById('postcode').value = postcode;
+                await lookupByCoords(longitude, latitude);
+              } else {
+                resultDiv.textContent = 'Could not determine postcode from your location.';
+              }
+            } catch (err) {
+              resultDiv.textContent = 'Error retrieving postcode from location.';
+              console.error(err);
+            }
+          },
+          err => {
+            resultDiv.textContent = 'Unable to retrieve your location.';
+            console.error(err);
+          }
+        );
+      });
+
+      locationBtn.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          locationBtn.click();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
