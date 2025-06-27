@@ -183,9 +183,12 @@
       });
 
       geoButton.addEventListener('click', () => {
-        if (!navigator.geolocation) {
-          alert('Geolocation is not supported by your browser');
-          return;
+        if (data.result && data.result.length > 0) {
+  document.getElementById('postcode').value = data.result[0].postcode;
+  form.dispatchEvent(new Event('submit')); // trigger lookup
+} else {
+  alert('Unable to find postcode for your location.');
+}
         }
 
         geoButton.disabled = true;
