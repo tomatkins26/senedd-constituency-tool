@@ -172,10 +172,10 @@
       const constituencyName = match.properties.enw_cymrae;
       const slug = constituencyName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
 
-      resultDiv.innerHTML = `
-        <p>Your 2026 Senedd constituency is: <a href="cons/${slug}.html" class="const-name" target="_blank" rel="noopener">${constituencyName}</a></p>
-        <div id="svg-map" style="width:100%; margin-top:1rem;"></div>
-      `;
+    resultDiv.innerHTML = `
+  <p>Your 2026 Senedd constituency is: <span class="const-name">${constituencyName}</span></p>
+  <div id="svg-map" style="width:100%; margin-top:1rem;"></div>
+`;
 
       const svgContainer = document.getElementById('svg-map');
 
