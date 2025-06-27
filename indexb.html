@@ -24,7 +24,7 @@
     .container {
       width: 100%;
       background-color: #fff;
-      border: 1px solid #006473; /* updated blue-green border */
+      border: 0px solid #006473; /* updated blue-green border */
       border: 0px solid #006473; /* updated blue-green border */
       padding: 1.5rem;
       box-sizing: border-box;
@@ -44,13 +44,14 @@
       font-weight: 600;
     }
     input[type="text"] {
-      width: 100%;
+      width: calc(100% - 40px); /* leave room for location button */
       padding: 0.5rem;
       font-size: 1rem;
       border: 1px solid #006473;
       border-radius: 0;
       box-sizing: border-box;
       outline-offset: 2px;
+      vertical-align: middle;
     }
     input[type="text"]:focus {
       outline: 2px solid #006473;
@@ -94,6 +95,25 @@
       color: #666;
       margin-top: 0.75rem;
     }
+
+    /* New styles for location button */
+    #location-btn {
+      display: inline-block;
+      vertical-align: middle;
+      cursor: pointer;
+      margin-left: 4px;
+      width: 32px;
+      height: 32px;
+      fill: #006473;
+      stroke: #006473;
+      stroke-width: 2;
+      border-radius: 50%;
+      transition: fill 0.2s, stroke 0.2s;
+    }
+    #location-btn:hover {
+      fill: grey;
+      stroke: grey;
+    }
   </style>
 </head>
 <body>
@@ -101,7 +121,13 @@
     <h2>Find Your 2026 Senedd Constituency</h2>
     <form id="lookup-form">
       <label for="postcode">Enter your postcode:</label>
-      <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required aria-required="true" aria-describedby="postcode-desc" />
+      <div style="display:flex; align-items:center;">
+        <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required aria-required="true" aria-describedby="postcode-desc" />
+        <svg id="location-btn" role="button" tabindex="0" aria-label="Find my current location" viewBox="0 0 24 24" >
+          <circle cx="12" cy="12" r="8" fill="none" />
+          <circle cx="12" cy="12" r="4" />
+        </svg>
+      </div>
       <div id="postcode-desc" style="font-size:0.8rem; color:#666; margin-top:0.2rem;">
         Enter a Welsh postcode to find your constituency.
       </div>
@@ -115,6 +141,7 @@
     (function() {
       const form = document.getElementById('lookup-form');
       const resultDiv = document.getElementById('result');
+      const locationBtn = document.getElementById('location-btn');
       let boundaries = null;
 
       // Load Senedd boundaries
@@ -127,11 +154,31 @@
           resultDiv.textContent = 'Error loading constituency data.';
         });
 
-      form.addEventListener('submit', async e => {
-        e.preventDefault();
-        const postcode = document.getElementById('postcode').value.trim();
+      async function lookupByCoords(longitude, latitude) {
+        if (!boundaries) {
+          resultDiv.textContent = 'Constituency data not loaded yet.';
+          return;
+        }
         resultDiv.textContent = 'Looking up constituency…';
 
+        const userPoint = turf.point([longitude, latitude]);
+        const match = boundaries.features.find(feature => turf.booleanPointInPolygon(userPoint, feature));
+
+        if (!match) {
+          resultDiv.textContent = 'Could not find your constituency.';
+          return;
+        }
+
+        const constituencyName = match.properties.enw_cymrae;
+        const slug = constituencyName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+        resultDiv.innerHTML = `
+  <p>Your 2026 Senedd constituency is: <a href="cons/${slug}.html" class="const-name" target="_blank" rel="noopener">${constituencyName}</a></p>
+  <img src="images/${slug}.jpg" alt="Map of ${constituencyName} constituency" style="width:100%; margin-top:1rem;" />
+`;
+      }
+
+      async function lookupByPostcode(postcode) {
+        resultDiv.textContent = 'Looking up constituency…';
         try {
           const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
           const data = await res.json();
@@ -143,23 +190,42 @@
           }
 
           const { longitude, latitude } = data.result;
-          const userPoint = turf.point([longitude, latitude]);
-          const match = boundaries.features.find(feature => turf.booleanPointInPolygon(userPoint, feature));
-
-          if (!match) {
-            resultDiv.textContent = 'Could not find your constituency.';
-            return;
-          }
-
-          const constituencyName = match.properties.enw_cymrae;
-          const slug = constituencyName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-        resultDiv.innerHTML = `
-  <p>Your 2026 Senedd constituency is: <a href="cons/${slug}.html" class="const-name" target="_blank" rel="noopener">${constituencyName}</a></p>
-  <img src="images/${slug}.jpg" alt="Map of ${constituencyName} constituency" style="width:100%; margin-top:1rem;" />
-`;
+          await lookupByCoords(longitude, latitude);
         } catch (err) {
           resultDiv.textContent = 'Something went wrong. Please check your postcode and try again.';
           console.error(err);
+        }
+      }
+
+      form.addEventListener('submit', async e => {
+        e.preventDefault();
+        const postcode = document.getElementById('postcode').value.trim();
+        await lookupByPostcode(postcode);
+      });
+
+      locationBtn.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+          resultDiv.textContent = 'Geolocation is not supported by your browser.';
+          return;
+        }
+        resultDiv.textContent = 'Getting your location…';
+        navigator.geolocation.getCurrentPosition(
+          async position => {
+            const { longitude, latitude } = position.coords;
+            await lookupByCoords(longitude, latitude);
+          },
+          err => {
+            resultDiv.textContent = 'Unable to retrieve your location.';
+            console.error(err);
+          }
+        );
+      });
+
+      // Accessibility: allow keyboard activation of button (Enter or Space)
+      locationBtn.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          locationBtn.click();
         }
       });
     })();
