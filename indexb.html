@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html>Add commentMore actions
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -173,7 +173,7 @@
       const slug = constituencyName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
 
       resultDiv.innerHTML = `
-        <p>Your 2026 Senedd constituency is: <a href="cons/${slug}.html" class="const-name" target="_blank"</a></p>
+        <p>Your 2026 Senedd constituency is: <a href="cons/${slug}.html" class="const-name" target="_blank" rel="noopener">${constituencyName}</a></p>
         <div id="svg-map" style="width:100%; margin-top:1rem;"></div>
       `;
 
