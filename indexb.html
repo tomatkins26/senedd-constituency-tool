@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html>Add commentMore actions
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -12,9 +12,6 @@
       background-color: #fff;
       color: #28394e; /* updated text color */
     }
-    .const-highlight {
-  color: #006473; /* your desired color */
-  font-weight: 700;
     body {
       display: flex;
       flex-direction: column;
@@ -176,7 +173,7 @@
       const slug = constituencyName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
 
     resultDiv.innerHTML = `
-  <p>Your 2026 Senedd constituency is: <span class="const-highlight">${constituencyName}</span></p>
+  <p>Your 2026 Senedd constituency is: <span class="const-name">${constituencyName}</span></p>
   <div id="svg-map" style="width:100%; margin-top:1rem;"></div>
 `;
 
