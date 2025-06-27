@@ -203,9 +203,6 @@
           path.addEventListener('mouseleave', () => {
             path.style.opacity = 1;
           });
-          path.addEventListener('click', () => {
-            alert(`Clicked: ${path.id || 'Unknown area'}`);
-          });
         });
       } catch (svgErr) {
         svgContainer.innerHTML = '<p style="color:red;">Could not load map for this constituency.</p>';
