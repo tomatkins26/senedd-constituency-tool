@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html>More actions
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -134,6 +134,7 @@
       <button type="submit">Look up</button>
     </form>
     <div id="result" aria-live="polite"></div>
+    <div class="data-source">Data from Senedd Cymru/Welsh Parliament</div>
     <div class="data-source">Data from Senedd Cymru/Welsh Parliament • Your data is not recorded and is used temporarily for this search.</div>
   </div>
 
@@ -170,50 +171,13 @@
         }
 
         const constituencyName = match.properties.enw_cymrae;
-const slug = constituencyName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-
-resultDiv.innerHTML = `
+        const slug = constituencyName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+        resultDiv.innerHTML = `
   <p>Your 2026 Senedd constituency is: <a href="cons/${slug}.html" class="const-name" target="_blank" rel="noopener">${constituencyName}</a></p>
-  <div id="svg-map" style="width:100%; margin-top:1rem;"></div>
+  <img src="images/${slug}.jpg" alt="Map of ${constituencyName} constituency" style="width:100%; margin-top:1rem;" />
 `;
+      }
 
-// Load SVG map dynamically
-const svgContainer = document.getElementById('svg-map');
-
-try {
-  const svgRes = await fetch(`.svg/${slug}.svg`);
-  if (!svgRes.ok) throw new Error('SVG not found');
-  const svgText = await svgRes.text();
-  svgContainer.innerHTML = svgText;
-
-  // Optional interactivity (customise based on your SVG)
-  const svgElement = svgContainer.querySelector('svg');
-
-  // Highlight shape with a class or ID (edit as needed)
-  const targetPath = svgElement?.querySelector('.highlight'); // adjust if using IDs
-
-  if (targetPath) {
-    targetPath.style.stroke = '#ffcc00';
-    targetPath.style.strokeWidth = '3';
-    targetPath.style.fill = '#fff0b3';
-  }
-
-  svgElement?.querySelectorAll('path').forEach(path => {
-    path.style.cursor = 'pointer';
-    path.addEventListener('mouseenter', () => {
-      path.style.opacity = 0.7;
-    });
-    path.addEventListener('mouseleave', () => {
-      path.style.opacity = 1;
-    });
-    path.addEventListener('click', () => {
-      alert(`Clicked: ${path.id || 'Unknown area'}`);
-    });
-  });
-} catch (svgErr) {
-  svgContainer.innerHTML = '<p style="color:red;">Could not load map for this constituency.</p>';
-  console.error(svgErr);
-}
       async function lookupByPostcode(postcode) {
         resultDiv.textContent = 'Looking up constituency…';
         try {
