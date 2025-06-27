@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html>More actions
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -10,7 +10,7 @@
       margin: 0;
       font-family: Arial, sans-serif;
       background-color: #fff;
-      color: #28394e;
+      color: #28394e; /* updated text color */
     }
     body {
       display: flex;
@@ -24,7 +24,8 @@
     .container {
       width: 100%;
       background-color: #fff;
-      border: 0px solid #006473;
+      border: 1px solid #006473; /* updated blue-green border */
+      border: 0px solid #006473; /* updated blue-green border */
       padding: 1.5rem;
       box-sizing: border-box;
       box-shadow: none;
@@ -42,13 +43,9 @@
       margin-bottom: 0.25rem;
       font-weight: 600;
     }
-    .input-wrapper {
-      position: relative;
-      width: 100%;
-    }
     input[type="text"] {
       width: 100%;
-      padding: 0.5rem 2.5rem 0.5rem 0.5rem;
+      padding: 0.5rem;
       font-size: 1rem;
       border: 1px solid #006473;
       border-radius: 0;
@@ -57,21 +54,6 @@
     }
     input[type="text"]:focus {
       outline: 2px solid #006473;
-    }
-    .geo-button {
-      position: absolute;
-      right: 0.5rem;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      padding: 0;
-      cursor: pointer;
-    }
-    .geo-button svg {
-      width: 20px;
-      height: 20px;
-      fill: #006473;
     }
     button[type="submit"] {
       margin-top: 1rem;
@@ -101,6 +83,12 @@
     a.const-name:hover {
       text-decoration: underline;
     }
+    iframe.flourish-embed {
+      width: 100%;
+      height: 320px;
+      border: none;
+      margin-top: 1rem;
+    }
     .data-source {
       font-size: 0.8rem;
       color: #666;
@@ -113,14 +101,7 @@
     <h2>Find Your 2026 Senedd Constituency</h2>
     <form id="lookup-form">
       <label for="postcode">Enter your postcode:</label>
-      <div class="input-wrapper">
-        <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required aria-required="true" aria-describedby="postcode-desc" />
-        <button type="button" class="geo-button" title="Use current location" aria-label="Use current location">
-         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <circle cx="12" cy="12" r="9" stroke="#006473" stroke-width="2" fill="none"/>
-            <circle cx="12" cy="12" r="3" fill="#006473"/>
-        </button>
-      </div>
+      <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required aria-required="true" aria-describedby="postcode-desc" />
       <div id="postcode-desc" style="font-size:0.8rem; color:#666; margin-top:0.2rem;">
         Enter a Welsh postcode to find your constituency.
       </div>
@@ -134,9 +115,9 @@
     (function() {
       const form = document.getElementById('lookup-form');
       const resultDiv = document.getElementById('result');
-      const geoButton = document.querySelector('.geo-button');
       let boundaries = null;
 
+      // Load Senedd boundaries
       fetch('senedd2026.json')
         .then(res => res.json())
         .then(data => {
@@ -172,48 +153,14 @@
 
           const constituencyName = match.properties.enw_cymrae;
           const slug = constituencyName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-          resultDiv.innerHTML = `
-            <p>Your 2026 Senedd constituency is: <a href="cons/${slug}.html" class="const-name" target="_blank" rel="noopener">${constituencyName}</a></p>
-            <img src="images/${slug}.jpg" alt="Map of ${constituencyName} constituency" style="width:100%; margin-top:1rem;" />
-          `;
+        resultDiv.innerHTML = `
+  <p>Your 2026 Senedd constituency is: <a href="cons/${slug}.html" class="const-name" target="_blank" rel="noopener">${constituencyName}</a></p>
+  <img src="images/${slug}.jpg" alt="Map of ${constituencyName} constituency" style="width:100%; margin-top:1rem;" />
+`;
         } catch (err) {
           resultDiv.textContent = 'Something went wrong. Please check your postcode and try again.';
           console.error(err);
         }
-      });
-
-      geoButton.addEventListener('click', () => {
-        if (data.result && data.result.length > 0) {
-  document.getElementById('postcode').value = data.result[0].postcode;
-  form.dispatchEvent(new Event('submit')); // trigger lookup
-} else {
-  alert('Unable to find postcode for your location.');
-}
-        }
-
-        geoButton.disabled = true;
-        geoButton.innerHTML = '⏳';
-
-        navigator.geolocation.getCurrentPosition(async position => {
-          const { latitude, longitude } = position.coords;
-          try {
-            const res = await fetch(`https://api.postcodes.io/postcodes?lon=${longitude}&lat=${latitude}`);
-            const data = await res.json();
-            if (data.result && data.result.length > 0) {
-              document.getElementById('postcode').value = data.result[0].postcode;
-            } else {
-              alert('Unable to find postcode for your location.');
-            }
-          } catch {
-            alert('Location lookup failed.');
-          } finally {
-            geoButton.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 2c.552 0 1 .448 1 1v1.068c4.059.489 7.443 3.873 7.932 7.932H22c.552 0 1 .448 1 1s-.448 1-1 1h-1.068c-.489 4.059-3.873 7.443-7.932 7.932V22c0 .552-.448 1-1 1s-1-.448-1-1v-1.068c-4.059-.489-7.443-3.873-7.932-7.932H2c-.552 0-1-.448-1-1s.448-1 1-1h1.068c.489-4.059 3.873-7.443 7.932-7.932V3c0-.552.448-1 1-1zm0 5a5 5 0 100 10 5 5 0 000-10z"/></svg>`;
-            geoButton.disabled = false;
-          }
-        }, () => {
-          alert('Permission denied or unavailable.');
-          geoButton.disabled = false;
-        });
       });
     })();
   </script>
