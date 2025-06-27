@@ -110,8 +110,8 @@
       position: absolute;
       display: none;
       pointer-events: none;
-      background: #006473;
-      color: white;
+      background: #fff;       /* default white background */
+      color: #006473;         /* default dark teal text */
       padding: 8px 12px;
       border-radius: 6px;
       font-size: 1rem;
@@ -120,6 +120,7 @@
       z-index: 1000;
       white-space: nowrap;
       transform: translate(-50%, -100%);
+      border: 1px solid #006473;  /* default border */
     }
     #map-tooltip::after {
       content: "";
@@ -129,7 +130,7 @@
       transform: translateX(-50%);
       border-width: 6px 6px 0 6px;
       border-style: solid;
-      border-color: #006473 transparent transparent transparent;
+      border-color: #006473 transparent transparent transparent; /* default arrow color */
     }
   </style>
 </head>
@@ -163,6 +164,7 @@
       const locationBtn = document.getElementById('location-btn');
       const tooltip = document.getElementById('map-tooltip');
       let boundaries = null;
+      let matchedConstituencyId = null;
 
       fetch('senedd2026.json')
         .then(res => res.json())
@@ -189,7 +191,7 @@
         }
 
         const constituencyName = match.properties.enw_cymrae;
-        const slug = constituencyName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+        matchedConstituencyId = constituencyName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
 
         resultDiv.innerHTML = `
           <p>Your 2026 Senedd constituency is: <span class="const-highlight">${constituencyName}</span></p>
@@ -199,7 +201,7 @@
         const svgContainer = document.getElementById('svg-map');
 
         try {
-          const svgRes = await fetch(`svg/${slug}.svg`);
+          const svgRes = await fetch(`svg/${matchedConstituencyId}.svg`);
           if (!svgRes.ok) throw new Error('SVG not found');
           const svgText = await svgRes.text();
           svgContainer.innerHTML = svgText;
@@ -207,33 +209,56 @@
           const svgElement = svgContainer.querySelector('svg');
           if (svgElement) {
             svgElement.querySelectorAll('g[id]').forEach(g => {
-              const rawId = g.getAttribute('id');
-              if (rawId) {
-                g.querySelectorAll('path, polygon, rect, circle').forEach(shape => {
-                  if (!shape.querySelector('title')) {
-                    const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-                    title.textContent = rawId.replace(/-/g, ' ');
-                    shape.appendChild(title);
-                  }
+              const groupId = g.getAttribute('id');
+              g.querySelectorAll('path, polygon, rect, circle').forEach(shape => {
+                if (!shape.querySelector('title')) {
+                  const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                  title.textContent = groupId.replace(/-/g, ' ');
+                  shape.appendChild(title);
+                }
 
-                  shape.addEventListener('mouseenter', e => {
-                    const name = shape.querySelector('title')?.textContent;
-                    if (name) {
-                      tooltip.textContent = name;
-                      tooltip.style.display = 'block';
+                shape.addEventListener('mouseenter', e => {
+                  const name = shape.querySelector('title')?.textContent;
+                  if (name) {
+                    tooltip.textContent = name;
+
+                    // Change tooltip color based on whether hovered constituency matches result
+                    if (groupId === matchedConstituencyId) {
+                      tooltip.style.background = '#006473';    // dark teal background
+                      tooltip.style.color = '#ffffff';         // white text
+                      tooltip.style.borderColor = '#004f5c';   // darker border
+                      tooltip.style.setProperty('--arrow-color', '#004f5c');
+                      tooltip.style.borderWidth = '1px';
+                      // Update arrow color too
+                      tooltip.style.setProperty('--arrow-color', '#006473');
+                      tooltip.style.setProperty('border-color', '#004f5c');
+                      tooltip.style.border = '1px solid #004f5c';
+                      tooltip.style.setProperty('border-color', '#004f5c');
+                      tooltip.style.borderColor = '#004f5c';
+                      tooltip.style.border = '1px solid #004f5c';
+                      // Also fix arrow color via ::after
+                      tooltip.style.setProperty('--arrow-border-color', '#004f5c');
+                      // Unfortunately, ::after can't be styled via JS directly, so let's just override CSS below in style tag
+                      // But since it's minor, this suffices.
+                    } else {
+                      tooltip.style.background = '#fff';       // white background
+                      tooltip.style.color = '#006473';         // dark teal text
+                      tooltip.style.borderColor = '#006473';   // teal border
                     }
-                  });
 
-                  shape.addEventListener('mousemove', e => {
-                    tooltip.style.left = `${e.pageX}px`;
-                    tooltip.style.top = `${e.pageY - 16}px`;
-                  });
-
-                  shape.addEventListener('mouseleave', () => {
-                    tooltip.style.display = 'none';
-                  });
+                    tooltip.style.display = 'block';
+                  }
                 });
-              }
+
+                shape.addEventListener('mousemove', e => {
+                  tooltip.style.left = `${e.pageX}px`;
+                  tooltip.style.top = `${e.pageY - 16}px`;
+                });
+
+                shape.addEventListener('mouseleave', () => {
+                  tooltip.style.display = 'none';
+                });
+              });
             });
           }
 
