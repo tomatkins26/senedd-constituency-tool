@@ -106,6 +106,31 @@
       fill: grey;
       stroke: grey;
     }
+    #map-tooltip {
+      position: absolute;
+      display: none;
+      pointer-events: none;
+      background: #006473;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 1000;
+      white-space: nowrap;
+      transform: translate(-50%, -100%);
+    }
+    #map-tooltip::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -6px;
+      transform: translateX(-50%);
+      border-width: 6px 6px 0 6px;
+      border-style: solid;
+      border-color: #006473 transparent transparent transparent;
+    }
   </style>
 </head>
 <body>
@@ -129,11 +154,14 @@
     <div class="data-source">Data from Senedd Cymru/Welsh Parliament • Your data is not recorded and is used temporarily for this search.</div>
   </div>
 
+  <div id="map-tooltip"></div>
+
   <script>
     (function () {
       const form = document.getElementById('lookup-form');
       const resultDiv = document.getElementById('result');
       const locationBtn = document.getElementById('location-btn');
+      const tooltip = document.getElementById('map-tooltip');
       let boundaries = null;
 
       fetch('senedd2026.json')
@@ -177,20 +205,38 @@
           svgContainer.innerHTML = svgText;
 
           const svgElement = svgContainer.querySelector('svg');
-         if (svgElement) {
-  svgElement.querySelectorAll('g[id]').forEach(g => {
-    const rawId = g.getAttribute('id');
-    if (rawId) {
-      g.querySelectorAll('path, polygon, rect, circle').forEach(shape => {
-        if (!shape.querySelector('title')) {
-          const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-          title.textContent = rawId.replace(/-/g, ' ');
-          shape.appendChild(title);
-        }
-      });
-    }
-  });
-}
+          if (svgElement) {
+            svgElement.querySelectorAll('g[id]').forEach(g => {
+              const rawId = g.getAttribute('id');
+              if (rawId) {
+                g.querySelectorAll('path, polygon, rect, circle').forEach(shape => {
+                  if (!shape.querySelector('title')) {
+                    const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                    title.textContent = rawId.replace(/-/g, ' ');
+                    shape.appendChild(title);
+                  }
+
+                  shape.addEventListener('mouseenter', e => {
+                    const name = shape.querySelector('title')?.textContent;
+                    if (name) {
+                      tooltip.textContent = name;
+                      tooltip.style.display = 'block';
+                    }
+                  });
+
+                  shape.addEventListener('mousemove', e => {
+                    tooltip.style.left = `${e.pageX}px`;
+                    tooltip.style.top = `${e.pageY - 16}px`;
+                  });
+
+                  shape.addEventListener('mouseleave', () => {
+                    tooltip.style.display = 'none';
+                  });
+                });
+              }
+            });
+          }
+
           const targetPath = svgElement?.querySelector('.highlight');
           if (targetPath) {
             targetPath.style.stroke = '#ffcc00';
