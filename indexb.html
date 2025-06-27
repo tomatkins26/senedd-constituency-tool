@@ -212,7 +212,23 @@
         navigator.geolocation.getCurrentPosition(
           async position => {
             const { longitude, latitude } = position.coords;
-            await lookupByCoords(longitude, latitude);
+
+            // Reverse lookup postcode from coords
+            try {
+              const res = await fetch(`https://api.postcodes.io/postcodes?lon=${longitude}&lat=${latitude}`);
+              const data = await res.json();
+
+              if (data.status === 200 && data.result && data.result.length > 0) {
+                const postcode = data.result[0].postcode;
+                document.getElementById('postcode').value = postcode; // autofill input box
+                await lookupByCoords(longitude, latitude);
+              } else {
+                resultDiv.textContent = 'Could not determine postcode from your location.';
+              }
+            } catch (err) {
+              resultDiv.textContent = 'Error retrieving postcode from location.';
+              console.error(err);
+            }
           },
           err => {
             resultDiv.textContent = 'Unable to retrieve your location.';
