@@ -180,7 +180,7 @@
       const svgContainer = document.getElementById('svg-map');
 
       try {
-        const svgRes = await fetch(`.svg/${slug}.svg`);
+        const svgRes = await fetch(`svg/${slug}.svg`);
         if (!svgRes.ok) throw new Error('SVG not found');
         const svgText = await svgRes.text();
         svgContainer.innerHTML = svgText;
