@@ -110,8 +110,8 @@
       position: absolute;
       display: none;
       pointer-events: none;
-      background: #fff;       /* default white background */
-      color: #fff;         /* default dark teal text */
+      background: #fff;
+      color: #fff;
       padding: 8px 12px;
       border-radius: 0px;
       font-size: 1rem;
@@ -120,7 +120,7 @@
       z-index: 1000;
       white-space: nowrap;
       transform: translate(-50%, -100%);
-      border: 0px solid #006473;  /* default border */
+      border: 0px solid #006473;
     }
     #map-tooltip::after {
       content: "";
@@ -130,7 +130,14 @@
       transform: translateX(-50%);
       border-width: 6px 6px 0 6px;
       border-style: solid;
-      border-color: #006473 transparent transparent transparent; /* default arrow color */
+      border-color: #006473 transparent transparent transparent;
+    }
+    /* Highlight class for matching constituency */
+    .highlighted-const {
+      transition: fill 0.3s ease, stroke 0.3s ease;
+      fill: #006473 !important;
+      stroke: #004f5c !important;
+      stroke-width: 3px !important;
     }
   </style>
 </head>
@@ -208,6 +215,7 @@
 
           const svgElement = svgContainer.querySelector('svg');
           if (svgElement) {
+            // Add tooltips and mouse events on shapes
             svgElement.querySelectorAll('g[id]').forEach(g => {
               const groupId = g.getAttribute('id');
               g.querySelectorAll('path, polygon, rect, circle').forEach(shape => {
@@ -222,30 +230,15 @@
                   if (name) {
                     tooltip.textContent = name;
 
-                    // Change tooltip color based on whether hovered constituency matches result
                     if (groupId === matchedConstituencyId) {
-                      tooltip.style.background = '#006473';    // dark teal background
-                      tooltip.style.color = '#ffffff';         // white text
-                      tooltip.style.borderColor = '#004f5c';   // darker border
-                      tooltip.style.setProperty('--arrow-color', '#004f5c');
-                      tooltip.style.borderWidth = '1px';
-                      // Update arrow color too
-                      tooltip.style.setProperty('--arrow-color', '#006473');
-                      tooltip.style.setProperty('border-color', '#004f5c');
-                      tooltip.style.border = '1px solid #004f5c';
-                      tooltip.style.setProperty('border-color', '#004f5c');
+                      tooltip.style.background = '#006473';
+                      tooltip.style.color = '#ffffff';
                       tooltip.style.borderColor = '#004f5c';
-                      tooltip.style.border = '1px solid #004f5c';
-                      // Also fix arrow color via ::after
-                      tooltip.style.setProperty('--arrow-border-color', '#004f5c');
-                      // Unfortunately, ::after can't be styled via JS directly, so let's just override CSS below in style tag
-                      // But since it's minor, this suffices.
                     } else {
-                      tooltip.style.background = '#fff';       // white background
-                      tooltip.style.color = '#006473';         // dark teal text
-                      tooltip.style.borderColor = '#006473';   // teal border
+                      tooltip.style.background = '#fff';
+                      tooltip.style.color = '#006473';
+                      tooltip.style.borderColor = '#006473';
                     }
-
                     tooltip.style.display = 'block';
                   }
                 });
@@ -260,15 +253,28 @@
                 });
               });
             });
+
+            // *** Highlight the matching constituency group by ID ***
+            // Clear any existing highlights first
+            svgElement.querySelectorAll('.highlighted-const').forEach(el => {
+              el.classList.remove('highlighted-const');
+              el.style.fill = '';
+              el.style.stroke = '';
+              el.style.strokeWidth = '';
+            });
+
+            // Try to find element(s) with id === matchedConstituencyId
+            const matchElement = svgElement.querySelector(`#${matchedConstituencyId}`);
+            if (matchElement) {
+              matchElement.classList.add('highlighted-const');
+              // If you want to override styles directly instead of CSS class, you can uncomment:
+              // matchElement.style.fill = '#006473';
+              // matchElement.style.stroke = '#004f5c';
+              // matchElement.style.strokeWidth = '3px';
+            }
           }
 
-          const targetPath = svgElement?.querySelector('.highlight');
-          if (targetPath) {
-            targetPath.style.stroke = '#ffcc00';
-            targetPath.style.strokeWidth = '4';
-            targetPath.style.fill = '#fff0b3';
-          }
-
+          // Extra: add hover opacity changes on paths
           svgElement?.querySelectorAll('path').forEach(path => {
             path.addEventListener('mouseenter', () => {
               path.style.opacity = 0.7;
@@ -277,6 +283,7 @@
               path.style.opacity = 1;
             });
           });
+
         } catch (svgErr) {
           svgContainer.innerHTML = '<p style="color:red;">Could not load map for this constituency.</p>';
           console.error(svgErr);
@@ -323,31 +330,37 @@
               const res = await fetch(`https://api.postcodes.io/postcodes?lon=${longitude}&lat=${latitude}`);
               const data = await res.json();
 
-              if (data.status === 200 && data.result && data.result.length > 0) {
+              if (data.result && data.result.length) {
                 const postcode = data.result[0].postcode;
                 document.getElementById('postcode').value = postcode;
                 await lookupByCoords(longitude, latitude);
               } else {
-                resultDiv.textContent = 'Could not determine postcode from your location.';
+                // Fallback: just lookup by coords
+                await lookupByCoords(longitude, latitude);
               }
-            } catch (err) {
-              resultDiv.textContent = 'Error retrieving postcode from location.';
-              console.error(err);
+            } catch {
+              // Fallback: just lookup by coords
+              await lookupByCoords(longitude, latitude);
             }
           },
-          err => {
-            resultDiv.textContent = 'Unable to retrieve your location.';
-            console.error(err);
+          error => {
+            switch (error.code) {
+              case error.PERMISSION_DENIED:
+                resultDiv.textContent = 'Permission to access location denied.';
+                break;
+              case error.POSITION_UNAVAILABLE:
+                resultDiv.textContent = 'Position unavailable.';
+                break;
+              case error.TIMEOUT:
+                resultDiv.textContent = 'Location request timed out.';
+                break;
+              default:
+                resultDiv.textContent = 'An unknown error occurred.';
+            }
           }
         );
       });
 
-      locationBtn.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          locationBtn.click();
-        }
-      });
     })();
   </script>
 </body>
