@@ -137,10 +137,9 @@
           <circle cx="12" cy="12" r="4" />
         </svg>
       </div>
-     <div id="postcode-desc" style="font-size:0.8rem; color:#666; margin-top:0.2rem; display: flex; align-items: center; gap: 0.5rem;">
-  <span>Enter a Welsh postcode to find your constituency.</span>
-  <a href="#" id="view-all" style="color: #666; text-decoration: underline; cursor: pointer;">View all constituencies</a>
-</div>
+      <div id="postcode-desc" style="font-size:0.8rem; color:#666; margin-top:0.2rem;">
+        Enter a Welsh postcode to find your constituency.
+      </div>
       <button type="submit">Look up</button>
     </form>
     <div id="result" aria-live="polite"></div>
@@ -283,42 +282,32 @@
           resultDiv.textContent = 'Geolocation is not supported by your browser.';
           return;
         }
-
         resultDiv.textContent = 'Getting your location…';
-
         navigator.geolocation.getCurrentPosition(
-          async (position) => {
+          async position => {
             const { longitude, latitude } = position.coords;
-            await lookupByCoords(longitude, latitude);
-          },
-          (error) => {
-            switch(error.code) {
-              case error.PERMISSION_DENIED:
-                resultDiv.textContent = 'Permission denied for geolocation.';
-                break;
-              case error.POSITION_UNAVAILABLE:
-                resultDiv.textContent = 'Location information is unavailable.';
-                break;
-              case error.TIMEOUT:
-                resultDiv.textContent = 'The request to get location timed out.';
-                break;
-              default:
-                resultDiv.textContent = 'An unknown error occurred.';
-                break;
+            try {
+              const res = await fetch(`https://api.postcodes.io/postcodes?lon=${longitude}&lat=${latitude}`);
+              const data = await res.json();
+
+              if (data.result?.length) {
+                const postcode = data.result[0].postcode;
+                document.getElementById('postcode').value = postcode;
+              }
+              await lookupByCoords(longitude, latitude);
+            } catch {
+              await lookupByCoords(longitude, latitude);
             }
           },
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
+          error => {
+            const messages = {
+              1: 'Permission to access location denied.',
+              2: 'Position unavailable.',
+              3: 'Location request timed out.'
+            };
+            resultDiv.textContent = messages[error.code] || 'An unknown error occurred.';
           }
         );
-      });
-
-      // View all constituencies link - moved outside geolocation block to fix broken parentheses
-      document.getElementById('view-all').addEventListener('click', e => {
-        e.preventDefault();
-        window.open('https://your-site.com/all-constituencies-2026', '_blank', 'noopener');
       });
     })();
   </script>
