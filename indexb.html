@@ -137,9 +137,10 @@
           <circle cx="12" cy="12" r="4" />
         </svg>
       </div>
-      <div id="postcode-desc" style="font-size:0.8rem; color:#666; margin-top:0.2rem;">
-        Enter a Welsh postcode to find your constituency.
-      </div>
+     <div id="postcode-desc" style="font-size:0.8rem; color:#666; margin-top:0.2rem; display: flex; align-items: center; gap: 0.5rem;">
+  <span>Enter a Welsh postcode to find your constituency.</span>
+  <a href="#" id="view-all" style="font-weight: 600; color: #006473; text-decoration: underline; cursor: pointer;">View all constituencies</a>
+</div>
       <button type="submit">Look up</button>
     </form>
     <div id="result" aria-live="polite"></div>
@@ -307,6 +308,24 @@
             };
             resultDiv.textContent = messages[error.code] || 'An unknown error occurred.';
           }
+document.getElementById('view-all').addEventListener('click', async (e) => {
+  e.preventDefault();
+  resultDiv.innerHTML = `<p>Map of all 2026 Senedd constituencies:</p><div id="svg-map" style="width:100%; margin-top:1rem;"></div>`;
+
+  try {
+    const res = await fetch('svg/fullmap.svg');
+    if (!res.ok) throw new Error('Full map not found');
+    const svgText = await res.text();
+    const svgContainer = document.getElementById('svg-map');
+    svgContainer.innerHTML = svgText;
+    const svgElement = svgContainer.querySelector('svg');
+    if (svgElement) setupSVGInteractions(svgElement);
+  } catch (err) {
+    resultDiv.innerHTML = '<p style="color:red;">Could not load full constituency map.</p>';
+    console.error(err);
+  }
+});
+
         );
       });
     })();
