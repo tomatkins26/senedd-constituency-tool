@@ -11,6 +11,7 @@
       font-family: Arial, sans-serif;
       background-color: #fff;
       color: #28394e;
+      box-sizing: border-box;
     }
     body {
       display: flex;
@@ -19,27 +20,22 @@
       align-items: flex-start;
       padding: 1rem;
       max-width: 700px;
-      box-sizing: border-box;
     }
     .container {
       width: 100%;
       background-color: #fff;
       padding: 1.5rem;
-      box-sizing: border-box;
-      box-shadow: none;
-      border-radius: 0;
       text-align: left;
     }
     h2 {
-      color: #28394e;
-      margin-bottom: 1rem;
-      font-weight: 700;
       font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
     }
     label {
       display: block;
-      margin-bottom: 0.25rem;
       font-weight: 600;
+      margin-bottom: 0.25rem;
     }
     input[type="text"] {
       width: calc(100% - 40px);
@@ -47,24 +43,22 @@
       font-size: 1rem;
       border: 1px solid #006473;
       border-radius: 0;
-      box-sizing: border-box;
       outline-offset: 2px;
-      vertical-align: middle;
     }
     input[type="text"]:focus {
       outline: 2px solid #006473;
     }
     button[type="submit"] {
       margin-top: 1rem;
+      width: 100%;
+      padding: 0.6rem 1rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: white;
       background-color: #006473;
       border: none;
-      padding: 0.6rem 1rem;
-      color: white;
-      font-weight: 700;
-      cursor: pointer;
-      width: 100%;
       border-radius: 0;
-      font-size: 1rem;
+      cursor: pointer;
     }
     button[type="submit"]:hover {
       background-color: #004f5c;
@@ -72,17 +66,10 @@
     #result {
       margin-top: 1.5rem;
       font-weight: 600;
-      color: #28394e;
     }
     .const-highlight {
       color: #006473;
       font-weight: 700;
-    }
-    iframe.flourish-embed {
-      width: 100%;
-      height: 320px;
-      border: none;
-      margin-top: 1rem;
     }
     .data-source {
       font-size: 0.8rem;
@@ -91,7 +78,6 @@
     }
     #location-btn {
       display: inline-block;
-      vertical-align: middle;
       cursor: pointer;
       margin-left: 4px;
       width: 32px;
@@ -113,14 +99,13 @@
       background: #fff;
       color: #fff;
       padding: 8px 12px;
-      border-radius: 0px;
       font-size: 1rem;
       font-weight: 600;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      z-index: 1000;
       white-space: nowrap;
       transform: translate(-50%, -100%);
-      border: 0px solid #006473;
+      border: 0 solid #006473;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 1000;
     }
     #map-tooltip::after {
       content: "";
@@ -130,14 +115,13 @@
       transform: translateX(-50%);
       border-width: 6px 6px 0 6px;
       border-style: solid;
-      border-color: #FFFFFF transparent transparent transparent;
+      border-color: #fff transparent transparent transparent;
     }
-    /* Highlight class for matching constituency */
     .highlighted-const {
-      transition: fill 0.3s ease, stroke 0.3s ease;
       fill: #006473 !important;
       stroke: #004f5c !important;
       stroke-width: 3px !important;
+      transition: fill 0.3s ease, stroke 0.3s ease;
     }
   </style>
 </head>
@@ -159,7 +143,7 @@
       <button type="submit">Look up</button>
     </form>
     <div id="result" aria-live="polite"></div>
-    <div class="data-source">Data from Senedd Cymru/Welsh Parliament • Your data is  used temporarily for this search and is not recorded.</div>
+    <div class="data-source">Data from Senedd Cymru/Welsh Parliament • Your data is used temporarily for this search and is not recorded.</div>
   </div>
 
   <div id="map-tooltip"></div>
@@ -215,7 +199,6 @@
 
           const svgElement = svgContainer.querySelector('svg');
           if (svgElement) {
-            // Add tooltips and mouse events on shapes
             svgElement.querySelectorAll('g[id]').forEach(g => {
               const groupId = g.getAttribute('id');
               g.querySelectorAll('path, polygon, rect, circle').forEach(shape => {
@@ -229,16 +212,9 @@
                   const name = shape.querySelector('title')?.textContent;
                   if (name) {
                     tooltip.textContent = name;
-
-                    if (groupId === matchedConstituencyId) {
-                      tooltip.style.background = '#006473';
-                      tooltip.style.color = '#ffffff';
-                      tooltip.style.borderColor = '#004f5c';
-                    } else {
-                      tooltip.style.background = '#fff';
-                      tooltip.style.color = '#006473';
-                      tooltip.style.borderColor = '#006473';
-                    }
+                    tooltip.style.background = groupId === matchedConstituencyId ? '#006473' : '#fff';
+                    tooltip.style.color = groupId === matchedConstituencyId ? '#fff' : '#006473';
+                    tooltip.style.borderColor = groupId === matchedConstituencyId ? '#004f5c' : '#006473';
                     tooltip.style.display = 'block';
                   }
                 });
@@ -254,8 +230,6 @@
               });
             });
 
-            // *** Highlight the matching constituency group by ID ***
-            // Clear any existing highlights first
             svgElement.querySelectorAll('.highlighted-const').forEach(el => {
               el.classList.remove('highlighted-const');
               el.style.fill = '';
@@ -263,27 +237,14 @@
               el.style.strokeWidth = '';
             });
 
-            // Try to find element(s) with id === matchedConstituencyId
             const matchElement = svgElement.querySelector(`#${matchedConstituencyId}`);
-            if (matchElement) {
-              matchElement.classList.add('highlighted-const');
-              // If you want to override styles directly instead of CSS class, you can uncomment:
-              // matchElement.style.fill = '#006473';
-              // matchElement.style.stroke = '#004f5c';
-              // matchElement.style.strokeWidth = '3px';
-            }
+            if (matchElement) matchElement.classList.add('highlighted-const');
+
+            svgElement.querySelectorAll('path').forEach(path => {
+              path.addEventListener('mouseenter', () => path.style.opacity = 0.7);
+              path.addEventListener('mouseleave', () => path.style.opacity = 1);
+            });
           }
-
-          // Extra: add hover opacity changes on paths
-          svgElement?.querySelectorAll('path').forEach(path => {
-            path.addEventListener('mouseenter', () => {
-              path.style.opacity = 0.7;
-            });
-            path.addEventListener('mouseleave', () => {
-              path.style.opacity = 1;
-            });
-          });
-
         } catch (svgErr) {
           svgContainer.innerHTML = '<p style="color:red;">Could not load map for this constituency.</p>';
           console.error(svgErr);
@@ -325,42 +286,29 @@
         navigator.geolocation.getCurrentPosition(
           async position => {
             const { longitude, latitude } = position.coords;
-
             try {
               const res = await fetch(`https://api.postcodes.io/postcodes?lon=${longitude}&lat=${latitude}`);
               const data = await res.json();
 
-              if (data.result && data.result.length) {
+              if (data.result?.length) {
                 const postcode = data.result[0].postcode;
                 document.getElementById('postcode').value = postcode;
-                await lookupByCoords(longitude, latitude);
-              } else {
-                // Fallback: just lookup by coords
-                await lookupByCoords(longitude, latitude);
               }
+              await lookupByCoords(longitude, latitude);
             } catch {
-              // Fallback: just lookup by coords
               await lookupByCoords(longitude, latitude);
             }
           },
           error => {
-            switch (error.code) {
-              case error.PERMISSION_DENIED:
-                resultDiv.textContent = 'Permission to access location denied.';
-                break;
-              case error.POSITION_UNAVAILABLE:
-                resultDiv.textContent = 'Position unavailable.';
-                break;
-              case error.TIMEOUT:
-                resultDiv.textContent = 'Location request timed out.';
-                break;
-              default:
-                resultDiv.textContent = 'An unknown error occurred.';
-            }
+            const messages = {
+              1: 'Permission to access location denied.',
+              2: 'Position unavailable.',
+              3: 'Location request timed out.'
+            };
+            resultDiv.textContent = messages[error.code] || 'An unknown error occurred.';
           }
         );
       });
-
     })();
   </script>
 </body>
