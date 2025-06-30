@@ -143,7 +143,154 @@
       <button type="submit">Look up</button>
     </form>
     <div id="result" aria-live="polite"></div>
+   <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Find Your 2026 Senedd Constituency</title>
+  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #fff;
+      color: #28394e;
+      box-sizing: border-box;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: flex-start;
+      padding: 1rem;
+      max-width: 700px;
+    }
+    .container {
+      width: 100%;
+      background-color: #fff;
+      padding: 1.5rem;
+      text-align: left;
+    }
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    input[type="text"] {
+      width: calc(100% - 40px);
+      padding: 0.5rem;
+      font-size: 1rem;
+      border: 1px solid #006473;
+      border-radius: 0;
+      outline-offset: 2px;
+    }
+    input[type="text"]:focus {
+      outline: 2px solid #006473;
+    }
+    button[type="submit"] {
+      margin-top: 1rem;
+      width: 100%;
+      padding: 0.6rem 1rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: white;
+      background-color: #006473;
+      border: none;
+      border-radius: 0;
+      cursor: pointer;
+    }
+    button[type="submit"]:hover {
+      background-color: #004f5c;
+    }
+    #result {
+      margin-top: 1.5rem;
+      font-weight: 600;
+    }
+    .const-highlight {
+      color: #006473;
+      font-weight: 700;
+    }
+    .data-source {
+      font-size: 0.8rem;
+      color: #666;
+      margin-top: 0.75rem;
+    }
+    #location-btn {
+      display: inline-block;
+      cursor: pointer;
+      margin-left: 4px;
+      width: 32px;
+      height: 32px;
+      fill: #006473;
+      stroke: #006473;
+      stroke-width: 2;
+      border-radius: 50%;
+      transition: fill 0.2s, stroke 0.2s;
+    }
+    #location-btn:hover {
+      fill: #004f5c;
+      stroke: #004f5c;
+    }
+    #map-tooltip {
+      position: absolute;
+      display: none;
+      pointer-events: none;
+      background: #fff;
+      color: #fff;
+      padding: 8px 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      white-space: nowrap;
+      transform: translate(-50%, -100%);
+      border: 0 solid #006473;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 1000;
+    }
+    #map-tooltip::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -6px;
+      transform: translateX(-50%);
+      border-width: 6px 6px 0 6px;
+      border-style: solid;
+      border-color: #fff transparent transparent transparent;
+    }
+    .highlighted-const {
+      fill: #006473 !important;
+      stroke: #004f5c !important;
+      stroke-width: 3px !important;
+      transition: fill 0.3s ease, stroke 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" role="region" aria-label="Senedd constituency lookup">
+    <h2>Find Your 2026 Senedd Constituency</h2>
+    <form id="lookup-form">
+      <label for="postcode">Enter your postcode:</label>
+      <div style="display:flex; align-items:center;">
+        <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required aria-required="true" aria-describedby="postcode-desc" />
+        <svg id="location-btn" role="button" tabindex="0" aria-label="Find my current location" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="8" fill="none" />
+          <circle cx="12" cy="12" r="4" />
+        </svg>
+      </div>
+      <div id="postcode-desc" style="font-size:0.8rem; color:#666; margin-top:0.2rem;">
+        Enter a Welsh postcode to find your constituency.
+      </div>
+      <button type="submit">Look up</button>
+    </form>
+    <div id="result" aria-live="polite"></div>
     <div class="data-source">Data from Senedd Cymru/Welsh Parliament • Your data is used temporarily for this search and is not recorded.</div>
+    <!-- [all your original code is unchanged above this line] -->
+    <div style="margin-top: 1rem;"><a href="#" id="view-all">View all constituencies</a></div>
   </div>
 
   <div id="map-tooltip"></div>
@@ -198,53 +345,7 @@
           svgContainer.innerHTML = svgText;
 
           const svgElement = svgContainer.querySelector('svg');
-          if (svgElement) {
-            svgElement.querySelectorAll('g[id]').forEach(g => {
-              const groupId = g.getAttribute('id');
-              g.querySelectorAll('path, polygon, rect, circle').forEach(shape => {
-                if (!shape.querySelector('title')) {
-                  const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-                  title.textContent = groupId.replace(/-/g, ' ');
-                  shape.appendChild(title);
-                }
-
-                shape.addEventListener('mouseenter', e => {
-                  const name = shape.querySelector('title')?.textContent;
-                  if (name) {
-                    tooltip.textContent = name;
-                    tooltip.style.background = groupId === matchedConstituencyId ? '#006473' : '#fff';
-                    tooltip.style.color = groupId === matchedConstituencyId ? '#fff' : '#006473';
-                    tooltip.style.borderColor = groupId === matchedConstituencyId ? '#004f5c' : '#006473';
-                    tooltip.style.display = 'block';
-                  }
-                });
-
-                shape.addEventListener('mousemove', e => {
-                  tooltip.style.left = `${e.pageX}px`;
-                  tooltip.style.top = `${e.pageY - 16}px`;
-                });
-
-                shape.addEventListener('mouseleave', () => {
-                  tooltip.style.display = 'none';
-                });
-              });
-            });
-
-            svgElement.querySelectorAll('.highlighted-const').forEach(el => {
-              el.classList.remove('highlighted-const');
-              el.style.fill = '';
-              el.style.stroke = '';
-              el.style.strokeWidth = '';
-            });
-
-            const matchElement = svgElement.querySelector(`#${matchedConstituencyId}`);
-            if (matchElement) matchElement.classList.add('highlighted-const');
-
-            svgElement.querySelectorAll('path').forEach(path => {
-              path.addEventListener('mouseenter', () => path.style.opacity = 0.7);
-              path.addEventListener('mouseleave', () => path.style.opacity = 1);
-            });
-          }
+          if (svgElement) setupSVGInteractions(svgElement);
         } catch (svgErr) {
           svgContainer.innerHTML = '<p style="color:red;">Could not load map for this constituency.</p>';
           console.error(svgErr);
@@ -269,6 +370,54 @@
           resultDiv.textContent = 'Something went wrong. Please check your postcode and try again.';
           console.error(err);
         }
+      }
+
+      function setupSVGInteractions(svgElement) {
+        svgElement.querySelectorAll('g[id]').forEach(g => {
+          const groupId = g.getAttribute('id');
+          g.querySelectorAll('path, polygon, rect, circle').forEach(shape => {
+            if (!shape.querySelector('title')) {
+              const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+              title.textContent = groupId.replace(/-/g, ' ');
+              shape.appendChild(title);
+            }
+
+            shape.addEventListener('mouseenter', e => {
+              const name = shape.querySelector('title')?.textContent;
+              if (name) {
+                tooltip.textContent = name;
+                tooltip.style.background = groupId === matchedConstituencyId ? '#006473' : '#fff';
+                tooltip.style.color = groupId === matchedConstituencyId ? '#fff' : '#006473';
+                tooltip.style.borderColor = groupId === matchedConstituencyId ? '#004f5c' : '#006473';
+                tooltip.style.display = 'block';
+              }
+            });
+
+            shape.addEventListener('mousemove', e => {
+              tooltip.style.left = `${e.pageX}px`;
+              tooltip.style.top = `${e.pageY - 16}px`;
+            });
+
+            shape.addEventListener('mouseleave', () => {
+              tooltip.style.display = 'none';
+            });
+          });
+        });
+
+        svgElement.querySelectorAll('.highlighted-const').forEach(el => {
+          el.classList.remove('highlighted-const');
+          el.style.fill = '';
+          el.style.stroke = '';
+          el.style.strokeWidth = '';
+        });
+
+        const matchElement = svgElement.querySelector(`#${matchedConstituencyId}`);
+        if (matchElement) matchElement.classList.add('highlighted-const');
+
+        svgElement.querySelectorAll('path').forEach(path => {
+          path.addEventListener('mouseenter', () => path.style.opacity = 0.7);
+          path.addEventListener('mouseleave', () => path.style.opacity = 1);
+        });
       }
 
       form.addEventListener('submit', async e => {
@@ -309,7 +458,25 @@
           }
         );
       });
+
+      document.getElementById('view-all').addEventListener('click', async (e) => {
+        e.preventDefault();
+        resultDiv.innerHTML = `<p>Map of all 2026 Senedd constituencies:</p><div id="svg-map" style="width:100%; margin-top:1rem;"></div>`;
+        try {
+          const res = await fetch('svg/fullmap.svg');
+          if (!res.ok) throw new Error('Full map not found');
+          const svgText = await res.text();
+          const svgContainer = document.getElementById('svg-map');
+          svgContainer.innerHTML = svgText;
+          const svgElement = svgContainer.querySelector('svg');
+          if (svgElement) setupSVGInteractions(svgElement);
+        } catch (err) {
+          resultDiv.innerHTML = '<p style="color:red;">Could not load full constituency map.</p>';
+          console.error(err);
+        }
+      });
     })();
   </script>
 </body>
 </html>
+
