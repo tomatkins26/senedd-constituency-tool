@@ -193,15 +193,38 @@
       input[type="text"], button[type="submit"] { font-size: 0.95rem; }
       button[type="submit"] { padding: 0.8rem 1rem; }
     }
-      @media (max-width: 600px) {
-  .container {
-    box-shadow: none;
-  }
-      @media (max-width: 600px) {
+    @media (max-width: 600px) {
   .toggle-mode {
     display: none;
   }
-}
+  .container {
+    padding: 1rem;
+    box-shadow: none; /* cleaner on mobile */
+  }
+  * {
+    border-radius: 4px;
+  }
+  h2 {
+    font-size: 1.4rem;
+  }
+  input[type="text"] {
+    padding: 0.8rem;
+    font-size: 1rem;
+  }
+  button[type="submit"] {
+    padding: 1rem;
+    font-size: 1rem;
+  }
+  .postcode-container {
+    gap: 0.75rem;
+  }
+  label {
+    margin-bottom: 0.4rem;
+  }
+  #map-tooltip {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+  }
 }
   </style>
 </head>
