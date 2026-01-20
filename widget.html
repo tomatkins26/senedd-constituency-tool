@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>2026 Senedd Constituency Lookup Widget</title>
+
+  <!-- Turf (same as index.html) -->
+  <script src="https://unpkg.com/@turf/turf@6/turf.min.js" defer></script>
+
+  <!-- Font (same as index.html) -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Rubik', sans-serif;
+      box-sizing: border-box;
+      line-height: 1.6;
+      background: transparent;
+      color: #000;
+    }
+
+    * { box-sizing: border-box; }
+
+    /* Widget shell keeps it neat inside embeds */
+    .widget-shell {
+      width: 100%;
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 12px;
+    }
+
+    /* Core UI (derived from your index.html container styles) */
+    .container {
+      width: 100%;
+      padding: 0rem 1.25rem 1.25rem 1.25rem;
+      text-align: left;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+      border-radius: 12px;
+      background-color: #fff;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    h2 { font-size: 1.5rem; font-weight: 700; margin: 0 0 0.5rem 0; }
+    p.intro { margin: 0 0 1rem 0; color: #333; }
+
+    label { display: block; font-weight: 600; margin-bottom: 0.25rem; }
+
+    .postcode-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      min-width: 160px;
+      padding: 0.7rem;
+      font-size: 1rem;
+      border: 1px solid #F54927;
+      border-radius: 8px;
+      font-family: 'Rubik', sans-serif;
+      background: #fff;
+      color: #000;
+    }
+
+    input[type="text"]:focus { outline: 2px solid #F54927; }
+
+    button[type="submit"] {
+      margin-top: 0.9rem;
+      width: 100%;
+      padding: 0.85rem 1rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: white;
+      background-color: #F54927;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button[type="submit"]:hover { background-color: #F87C63; }
+
+    #result { margin-top: 1.25rem; font-weight: 600; }
+    .const-highlight { color: #F54927; font-weight: 700; text-decoration: none; }
+    .data-source { font-size: 0.8rem; color: #666; margin-top: 0.75rem; }
+
+    #location-btn {
+      display: inline-block;
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      fill: #F54927;
+      stroke: #F54927;
+      stroke-width: 2;
+      transition: fill 0.2s, stroke 0.2s;
+      border-radius: 8px;
+    }
+    #location-btn:hover { fill: #F87C63; stroke: #F87C63; }
+    #location-btn:focus,
+    #location-btn:focus-visible { outline: none; box-shadow: none; }
+
+    #map-tooltip {
+      position: absolute;
+      display: none;
+      pointer-events: none;
+      background: #F54927;
+      color: #fff;
+      padding: 8px 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      white-space: nowrap;
+      transform: translate(-50%, -100%);
+      border: 0 solid #F54927;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 1000;
+      border-radius: 6px;
+    }
+
+    #map-tooltip::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -6px;
+      transform: translateX(-50%);
+      border-width: 6px 6px 0 6px;
+      border-style: solid;
+      border-color: #fff transparent transparent transparent;
+    }
+
+    .highlighted-const {
+      fill: #F54927 !important;
+      stroke: #F87C63 !important;
+      stroke-width: 3px !important;
+      transition: fill 0.3s ease, stroke 0.3s ease;
+    }
+
+    #svg-map svg { width: 100%; height: auto; }
+
+    /* Optional compact header for embeds */
+    .widget-badge {
+      display: inline-block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #28394E;
+      background: #DCE1E9;
+      padding: 0.25rem 0.5rem;
+      border-radius: 999px;
+      margin-bottom: 0.75rem;
+    }
+
+    /* Dark mode support via query param (?theme=dark) */
+    body.dark {
+      background: transparent;
+      color: #e0e0e0;
+    }
+    body.dark .container {
+      background-color: #1e1e1e;
+      color: #e0e0e0;
+    }
+    body.dark input[type="text"] {
+      background-color: #2a2a2a;
+      color: #e0e0e0;
+      border-color: #F54927;
+    }
+    body.dark #result { color: #e0e0e0; }
+    body.dark .data-source { color: #aaa; }
+    body.dark p.intro { color: #e0e0e0; }
+
+    @media (max-width: 600px) {
+      .container { padding: 1rem; box-shadow: none; }
+      h2 { font-size: 1.35rem; }
+      #map-tooltip { font-size: 0.85rem; padding: 6px 10px; }
+    }
+  </style>
+</head>
+
+<body>
+  <noscript>
+    <p style="background:#fee;padding:1rem;border:1px solid #F54927;border-radius:12px;max-width:700px;margin:12px auto;">
+      This tool needs JavaScript to work. Please enable JavaScript and reload the page.
+    </p>
+  </noscript>
+
+  <div class="widget-shell">
+    <div class="container">
+      <div class="widget-badge">Senedd 2026 lookup</div>
+
+      <h2>Find Your 2026 Senedd Constituency</h2>
+      <p class="intro">
+        Enter your postcode to find out which of the new 2026 Senedd constituencies you live in. This lookup uses official Welsh boundary data.
+      </p>
+
+      <form id="lookup-form">
+        <label for="postcode">Enter your postcode:</label>
+        <div class="postcode-container">
+          <input
+            type="text"
+            id="postcode"
+            placeholder="e.g. CF99 1SN"
+            required
+            autocomplete="postal-code"
+          />
+          <svg id="location-btn" role="button" tabindex="0" aria-label="Find my current location" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="8" fill="none" />
+            <circle cx="12" cy="12" r="4" />
+          </svg>
+        </div>
+        <button type="submit">Look up</button>
+      </form>
+
+      <div id="result"></div>
+      <div id="constituency-info"></div>
+      <div id="svg-map" style="width:100%; margin-top:1rem;"></div>
+
+      <div class="data-source">
+        Data from Senedd Cymru/Welsh Parliament • Your data is used temporarily for this search and is not recorded.
+      </div>
+    </div>
+  </div>
+
+  <div id="map-tooltip"></div>
+
+  <script>
+    // Theme from query string: ?theme=dark
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const theme = (params.get("theme") || "").toLowerCase();
+      if (theme === "dark") document.body.classList.add("dark");
+    })();
+
+    // Auto-resize: send height to parent (embed.js listens for this)
+    function sendWidgetHeight() {
+      const height = Math.max(
+        document.documentElement.scrollHeight,
+        document.body.scrollHeight
+      );
+      window.parent && window.parent.postMessage(
+        { type: "SENEDD_WIDGET_HEIGHT", height },
+        "*"
+      );
+    }
+    window.addEventListener("load", sendWidgetHeight);
+    window.addEventListener("resize", sendWidgetHeight);
+    new MutationObserver(sendWidgetHeight).observe(document.documentElement, {
+      childList: true, subtree: true, attributes: true
+    });
+
+    // Lookup logic (ported from your index.html, functionally the same)
+    (function () {
+      const form = document.getElementById('lookup-form');
+      const resultDiv = document.getElementById('result');
+      const svgContainer = document.getElementById('svg-map');
+      const infoDiv = document.getElementById('constituency-info');
+      const locationBtn = document.getElementById('location-btn');
+      const tooltip = document.getElementById('map-tooltip');
+
+      let boundaries = null;
+      let matchedConstituencyId = null;
+
+      const constituencySummaries = {
+        "afan-ogwr-rhondda": "The new Afan Ogwr Rhondda constituency brings together Aberafan Maesteg and Rhondda and Ogmore.",
+        "bangor-conwy-mn": "The new Bangor Conwy Môn constituency was created by combining Bangor Aberconwy and Ynys Môn.",
+        "blaenau-gwent-caerffili-rhymni": "The new Blaenau Gwent Caerffili Rhymni constituency combines Blaenau Gwent and Rhymney with Caerphilly.",
+        "brycheiniog-tawe-nedd": "The new Brycheiniog Tawe Nedd constituency merges Brecon, Radnor and Cwm Tawe with Neath and Swansea East.",
+        "caerdydd-ffynnon-taf": "The new Caerdydd Ffynnon Taf constituency joins Cardiff North and Cardiff East.",
+        "caerdydd-penarth": "The new Caerdydd Penarth constituency combines Cardiff West with Cardiff South and Penarth.",
+        "casnewydd-islwyn": "The new Casnewydd Islwyn constituency merges Newport East, Newport West and Islwyn.",
+        "ceredigion-penfro": "Ceredigion Penfro combines Ceredigion Preseli with Mid and South Pembrokeshire.",
+        "clwyd": "The new Clwyd constituency merges Clwyd East and Clwyd North.",
+        "fflint-wrecsam": "Fflint Wrecsam consists of Alyn and Deeside and Wrexham.",
+        "gwynedd-maldwyn": "The new Gwynedd Maldwyn constituency merges Dwyfor Meirionnydd with Montgomeryshire and Glyndŵr.",
+        "gyr-abertawe": "Gŵyr Abertawe is formed from Swansea West and Gower.",
+        "pen-y-bont-bro-morgannwg": "Pen-y-bont Bro Morgannwg merges Bridgend and Vale of Glamorgan.",
+        "pontypridd-cynon-merthyr": "Pontypridd Cynon Merthyr unites Pontypridd with Merthyr Tydfil and Aberdare.",
+        "sir-fynwy-torfaen": "Sir Fynwy Torfaen merges Monmouthshire and Torfaen.",
+        "sir-gaerfyrddin": "Sir Gaerfyrddin merges Caerfyrddin (Carmarthen) and Llanelli."
+      };
+
+      fetch('senedd2026.json')
+        .then(res => res.json())
+        .then(data => { boundaries = data; sendWidgetHeight(); })
+        .catch(() => { resultDiv.textContent = 'Error loading constituency data.'; sendWidgetHeight(); });
+
+      async function lookupByCoords(longitude, latitude) {
+        if (!boundaries) {
+          resultDiv.textContent = 'Constituency data not loaded yet.';
+          sendWidgetHeight();
+          return;
+        }
+
+        resultDiv.textContent = 'Looking up constituency…';
+        sendWidgetHeight();
+
+        const userPoint = turf.point([longitude, latitude]);
+        const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
+
+        if (!match) {
+          resultDiv.textContent = 'There has been a problem. Try again.';
+          sendWidgetHeight();
+          return;
+        }
+
+        const constituencyName = match.properties.enw_cymrae;
+        matchedConstituencyId = constituencyName
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g,'-')
+          .replace(/[^\w-]/g,'');
+
+        resultDiv.innerHTML =
+          `<p>Your 2026 Senedd constituency is: <span class='const-highlight'>${constituencyName}</span></p>`;
+
+        const summary = constituencySummaries[matchedConstituencyId];
+        infoDiv.innerHTML = summary
+          ? `<hr style='border:none;border-top:1px solid #ccc;margin:1rem 0;'><p>${summary}</p>`
+          : '';
+
+        svgContainer.innerHTML = '';
+        sendWidgetHeight();
+
+        try {
+          const svgRes = await fetch(`svg/${matchedConstituencyId}.svg`);
+          if (!svgRes.ok) throw new Error('SVG not found');
+
+          const svgText = await svgRes.text();
+          svgContainer.innerHTML = svgText;
+
+          const svgElement = svgContainer.querySelector('svg');
+
+          if (svgElement) {
+            svgElement.setAttribute('role', 'img');
+            svgElement.setAttribute('aria-label', `Map of the ${constituencyName} constituency`);
+
+            svgElement.querySelectorAll('g[id]').forEach(g => {
+              const groupId = g.getAttribute('id');
+
+              g.querySelectorAll('path, polygon, rect, circle').forEach(shape => {
+                if (!shape.querySelector('title')) {
+                  const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                  title.textContent = groupId.replace(/-/g,' ');
+                  shape.appendChild(title);
+                }
+
+                shape.addEventListener('mouseenter', () => {
+                  const name = shape.querySelector('title')?.textContent;
+                  if (!name) return;
+
+                  tooltip.textContent = name;
+                  tooltip.style.background = groupId === matchedConstituencyId ? '#F54927' : '#fff';
+                  tooltip.style.color = groupId === matchedConstituencyId ? '#fff' : '#F54927';
+                  tooltip.style.borderColor = groupId === matchedConstituencyId ? '#F87C63' : '#F54927';
+                  tooltip.style.display = 'block';
+                });
+
+                shape.addEventListener('mousemove', e => {
+                  tooltip.style.left = `${e.pageX}px`;
+                  tooltip.style.top = `${e.pageY - 16}px`;
+                });
+
+                shape.addEventListener('mouseleave', () => {
+                  tooltip.style.display = 'none';
+                });
+              });
+            });
+
+            const matchElement = svgElement.querySelector(`#${matchedConstituencyId}`);
+            if (matchElement) matchElement.classList.add('highlighted-const');
+          }
+
+          sendWidgetHeight();
+        } catch {
+          svgContainer.innerHTML = '<p style="color:red;">Could not load map for this constituency.</p>';
+          sendWidgetHeight();
+        }
+      }
+
+      async function lookupByPostcode(postcode) {
+        resultDiv.textContent = 'Looking up constituency…';
+        sendWidgetHeight();
+
+        try {
+          const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
+          const data = await res.json();
+
+          if (!data.result || data.result.country !== 'Wales') {
+            resultDiv.textContent = 'Sorry, this tool only supports Welsh postcodes.';
+            sendWidgetHeight();
+            return;
+          }
+
+          const { longitude, latitude } = data.result;
+          await lookupByCoords(longitude, latitude);
+        } catch {
+          resultDiv.textContent = 'Something went wrong. Please check your postcode and try again.';
+          sendWidgetHeight();
+        }
+      }
+
+      form.addEventListener('submit', async e => {
+        e.preventDefault();
+        await lookupByPostcode(document.getElementById('postcode').value.trim());
+      });
+
+      locationBtn.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+          resultDiv.textContent = 'Geolocation not supported.';
+          sendWidgetHeight();
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(async pos => {
+          try {
+            const res = await fetch(
+              `https://api.postcodes.io/postcodes?lon=${pos.coords.longitude}&lat=${pos.coords.latitude}`
+            );
+
+            const postcode = res.ok ? (await res.json()).result[0].postcode : null;
+
+            if (!postcode) {
+              resultDiv.textContent = 'Could not determine postcode.';
+              sendWidgetHeight();
+              return;
+            }
+
+            document.getElementById('postcode').value = postcode;
+            await lookupByPostcode(postcode);
+          } catch {
+            resultDiv.textContent = 'Error retrieving postcode from your location.';
+            sendWidgetHeight();
+          }
+        }, () => {
+          resultDiv.textContent = 'Unable to retrieve your location.';
+          sendWidgetHeight();
+        });
+      });
+
+      // Keyboard support for the location "button" SVG
+      locationBtn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          locationBtn.click();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
