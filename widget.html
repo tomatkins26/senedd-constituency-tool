@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>2026 Senedd Constituency Lookup Widget</title>
+  <title>Senedd 2026 Lookup Widget</title>
 
-  <!-- Turf (same as index.html) -->
+  <!-- Same Turf dependency as your index.html -->
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js" defer></script>
 
-  <!-- Font (same as index.html) -->
+  <!-- Same font as your index.html -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap">
 
   <style>
@@ -22,21 +22,19 @@
       background: transparent;
       color: #000;
     }
-
     * { box-sizing: border-box; }
 
-    /* Widget shell keeps it neat inside embeds */
+    /* Compact embed shell */
     .widget-shell {
       width: 100%;
-      max-width: 700px;
+      max-width: 720px;
       margin: 0 auto;
-      padding: 12px;
+      padding: 10px;
     }
 
-    /* Core UI (derived from your index.html container styles) */
     .container {
       width: 100%;
-      padding: 0rem 1.25rem 1.25rem 1.25rem;
+      padding: 1rem;
       text-align: left;
       box-shadow: 0 6px 20px rgba(0,0,0,0.05);
       border-radius: 12px;
@@ -44,22 +42,43 @@
       transition: background-color 0.3s, color 0.3s;
     }
 
-    h2 { font-size: 1.5rem; font-weight: 700; margin: 0 0 0.5rem 0; }
-    p.intro { margin: 0 0 1rem 0; color: #333; }
+    .header-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
 
-    label { display: block; font-weight: 600; margin-bottom: 0.25rem; }
+    h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #28394E;
+      background: #DCE1E9;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    label { display: block; font-weight: 600; margin-bottom: 0.35rem; }
 
     .postcode-container {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.6rem;
       flex-wrap: wrap;
     }
 
     input[type="text"] {
       flex: 1;
       min-width: 160px;
-      padding: 0.7rem;
+      padding: 0.75rem;
       font-size: 1rem;
       border: 1px solid #F54927;
       border-radius: 8px;
@@ -67,33 +86,13 @@
       background: #fff;
       color: #000;
     }
-
     input[type="text"]:focus { outline: 2px solid #F54927; }
-
-    button[type="submit"] {
-      margin-top: 0.9rem;
-      width: 100%;
-      padding: 0.85rem 1rem;
-      font-size: 1rem;
-      font-weight: 700;
-      color: white;
-      background-color: #F54927;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    button[type="submit"]:hover { background-color: #F87C63; }
-
-    #result { margin-top: 1.25rem; font-weight: 600; }
-    .const-highlight { color: #F54927; font-weight: 700; text-decoration: none; }
-    .data-source { font-size: 0.8rem; color: #666; margin-top: 0.75rem; }
 
     #location-btn {
       display: inline-block;
       cursor: pointer;
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
       fill: #F54927;
       stroke: #F54927;
       stroke-width: 2;
@@ -104,6 +103,32 @@
     #location-btn:focus,
     #location-btn:focus-visible { outline: none; box-shadow: none; }
 
+    button[type="submit"] {
+      margin-top: 0.75rem;
+      width: 100%;
+      padding: 0.85rem 1rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: white;
+      background-color: #F54927;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button[type="submit"]:hover { background-color: #F87C63; }
+
+    #result { margin-top: 1rem; font-weight: 600; }
+    .const-highlight { color: #F54927; font-weight: 700; text-decoration: none; }
+
+    #svg-map { width: 100%; margin-top: 0.85rem; }
+    #svg-map svg { width: 100%; height: auto; }
+
+    .data-source {
+      font-size: 0.78rem;
+      color: #666;
+      margin-top: 0.75rem;
+    }
+
     #map-tooltip {
       position: absolute;
       display: none;
@@ -111,7 +136,7 @@
       background: #F54927;
       color: #fff;
       padding: 8px 12px;
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 600;
       white-space: nowrap;
       transform: translate(-50%, -100%);
@@ -120,7 +145,6 @@
       z-index: 1000;
       border-radius: 6px;
     }
-
     #map-tooltip::after {
       content: "";
       position: absolute;
@@ -139,41 +163,17 @@
       transition: fill 0.3s ease, stroke 0.3s ease;
     }
 
-    #svg-map svg { width: 100%; height: auto; }
-
-    /* Optional compact header for embeds */
-    .widget-badge {
-      display: inline-block;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: #28394E;
-      background: #DCE1E9;
-      padding: 0.25rem 0.5rem;
-      border-radius: 999px;
-      margin-bottom: 0.75rem;
-    }
-
-    /* Dark mode support via query param (?theme=dark) */
-    body.dark {
-      background: transparent;
-      color: #e0e0e0;
-    }
-    body.dark .container {
-      background-color: #1e1e1e;
-      color: #e0e0e0;
-    }
-    body.dark input[type="text"] {
-      background-color: #2a2a2a;
-      color: #e0e0e0;
-      border-color: #F54927;
-    }
-    body.dark #result { color: #e0e0e0; }
+    /* Optional embed dark mode via ?theme=dark */
+    body.dark { color: #e0e0e0; }
+    body.dark .container { background-color: #1e1e1e; color: #e0e0e0; }
+    body.dark input[type="text"] { background-color: #2a2a2a; color: #e0e0e0; }
     body.dark .data-source { color: #aaa; }
-    body.dark p.intro { color: #e0e0e0; }
 
-    @media (max-width: 600px) {
-      .container { padding: 1rem; box-shadow: none; }
-      h2 { font-size: 1.35rem; }
+    @media (max-width: 520px) {
+      .widget-shell { padding: 8px; }
+      .container { padding: 0.9rem; box-shadow: none; }
+      h2 { font-size: 1.15rem; }
+      .badge { display: none; }
       #map-tooltip { font-size: 0.85rem; padding: 6px 10px; }
     }
   </style>
@@ -181,30 +181,22 @@
 
 <body>
   <noscript>
-    <p style="background:#fee;padding:1rem;border:1px solid #F54927;border-radius:12px;max-width:700px;margin:12px auto;">
+    <p style="background:#fee;padding:1rem;border:1px solid #F54927;border-radius:12px;max-width:720px;margin:10px auto;">
       This tool needs JavaScript to work. Please enable JavaScript and reload the page.
     </p>
   </noscript>
 
   <div class="widget-shell">
     <div class="container">
-      <div class="widget-badge">Senedd 2026 lookup</div>
-
-      <h2>Find Your 2026 Senedd Constituency</h2>
-      <p class="intro">
-        Enter your postcode to find out which of the new 2026 Senedd constituencies you live in. This lookup uses official Welsh boundary data.
-      </p>
+      <div class="header-row">
+        <h2>Find your 2026 Senedd constituency</h2>
+        <span class="badge">Senedd 2026</span>
+      </div>
 
       <form id="lookup-form">
-        <label for="postcode">Enter your postcode:</label>
+        <label for="postcode">Postcode</label>
         <div class="postcode-container">
-          <input
-            type="text"
-            id="postcode"
-            placeholder="e.g. CF99 1SN"
-            required
-            autocomplete="postal-code"
-          />
+          <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required autocomplete="postal-code" />
           <svg id="location-btn" role="button" tabindex="0" aria-label="Find my current location" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="8" fill="none" />
             <circle cx="12" cy="12" r="4" />
@@ -215,10 +207,10 @@
 
       <div id="result"></div>
       <div id="constituency-info"></div>
-      <div id="svg-map" style="width:100%; margin-top:1rem;"></div>
+      <div id="svg-map"></div>
 
       <div class="data-source">
-        Data from Senedd Cymru/Welsh Parliament • Your data is used temporarily for this search and is not recorded.
+        Data: Senedd Cymru/Welsh Parliament • The postcode is used only for this search.
       </div>
     </div>
   </div>
@@ -226,31 +218,24 @@
   <div id="map-tooltip"></div>
 
   <script>
-    // Theme from query string: ?theme=dark
+    // Theme via query string: ?theme=dark
     (function () {
       const params = new URLSearchParams(window.location.search);
-      const theme = (params.get("theme") || "").toLowerCase();
-      if (theme === "dark") document.body.classList.add("dark");
+      if ((params.get("theme") || "").toLowerCase() === "dark") {
+        document.body.classList.add("dark");
+      }
     })();
 
-    // Auto-resize: send height to parent (embed.js listens for this)
+    // Auto-resize: send height to parent (embed.js can listen)
     function sendWidgetHeight() {
-      const height = Math.max(
-        document.documentElement.scrollHeight,
-        document.body.scrollHeight
-      );
-      window.parent && window.parent.postMessage(
-        { type: "SENEDD_WIDGET_HEIGHT", height },
-        "*"
-      );
+      const h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+      if (window.parent) window.parent.postMessage({ type: "SENEDD_WIDGET_HEIGHT", height: h }, "*");
     }
     window.addEventListener("load", sendWidgetHeight);
     window.addEventListener("resize", sendWidgetHeight);
-    new MutationObserver(sendWidgetHeight).observe(document.documentElement, {
-      childList: true, subtree: true, attributes: true
-    });
+    new MutationObserver(sendWidgetHeight).observe(document.documentElement, { childList: true, subtree: true, attributes: true });
 
-    // Lookup logic (ported from your index.html, functionally the same)
+    // Your original lookup JS (kept functionally the same; only small embed-friendly tweaks)
     (function () {
       const form = document.getElementById('lookup-form');
       const resultDiv = document.getElementById('result');
@@ -287,37 +272,21 @@
         .catch(() => { resultDiv.textContent = 'Error loading constituency data.'; sendWidgetHeight(); });
 
       async function lookupByCoords(longitude, latitude) {
-        if (!boundaries) {
-          resultDiv.textContent = 'Constituency data not loaded yet.';
-          sendWidgetHeight();
-          return;
-        }
-
-        resultDiv.textContent = 'Looking up constituency…';
-        sendWidgetHeight();
+        if (!boundaries) { resultDiv.textContent = 'Constituency data not loaded yet.'; sendWidgetHeight(); return; }
+        resultDiv.textContent = 'Looking up constituency…'; sendWidgetHeight();
 
         const userPoint = turf.point([longitude, latitude]);
         const match = boundaries.features.find(f => turf.booleanPointInPolygon(userPoint, f));
-
-        if (!match) {
-          resultDiv.textContent = 'There has been a problem. Try again.';
-          sendWidgetHeight();
-          return;
-        }
+        if (!match) { resultDiv.textContent = 'There has been a problem. Try again.'; sendWidgetHeight(); return; }
 
         const constituencyName = match.properties.enw_cymrae;
-        matchedConstituencyId = constituencyName
-          .trim()
-          .toLowerCase()
-          .replace(/\s+/g,'-')
-          .replace(/[^\w-]/g,'');
+        matchedConstituencyId = constituencyName.trim().toLowerCase().replace(/\s+/g,'-').replace(/[^\w-]/g,'');
 
-        resultDiv.innerHTML =
-          `<p>Your 2026 Senedd constituency is: <span class='const-highlight'>${constituencyName}</span></p>`;
+        resultDiv.innerHTML = `<p>Your 2026 Senedd constituency is: <span class='const-highlight'>${constituencyName}</span></p>`;
 
         const summary = constituencySummaries[matchedConstituencyId];
         infoDiv.innerHTML = summary
-          ? `<hr style='border:none;border-top:1px solid #ccc;margin:1rem 0;'><p>${summary}</p>`
+          ? `<hr style='border:none;border-top:1px solid #ccc;margin:0.85rem 0;'><p style="margin:0;">${summary}</p>`
           : '';
 
         svgContainer.innerHTML = '';
@@ -326,12 +295,10 @@
         try {
           const svgRes = await fetch(`svg/${matchedConstituencyId}.svg`);
           if (!svgRes.ok) throw new Error('SVG not found');
-
           const svgText = await svgRes.text();
           svgContainer.innerHTML = svgText;
 
           const svgElement = svgContainer.querySelector('svg');
-
           if (svgElement) {
             svgElement.setAttribute('role', 'img');
             svgElement.setAttribute('aria-label', `Map of the ${constituencyName} constituency`);
@@ -341,7 +308,7 @@
 
               g.querySelectorAll('path, polygon, rect, circle').forEach(shape => {
                 if (!shape.querySelector('title')) {
-                  const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                  const title = document.createElementNS('http://www.w3.org/2000/svg','title');
                   title.textContent = groupId.replace(/-/g,' ');
                   shape.appendChild(title);
                 }
@@ -362,9 +329,7 @@
                   tooltip.style.top = `${e.pageY - 16}px`;
                 });
 
-                shape.addEventListener('mouseleave', () => {
-                  tooltip.style.display = 'none';
-                });
+                shape.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
               });
             });
 
@@ -374,25 +339,21 @@
 
           sendWidgetHeight();
         } catch {
-          svgContainer.innerHTML = '<p style="color:red;">Could not load map for this constituency.</p>';
+          svgContainer.innerHTML = '<p style="color:red;margin:0.75rem 0 0 0;">Could not load map for this constituency.</p>';
           sendWidgetHeight();
         }
       }
 
       async function lookupByPostcode(postcode) {
-        resultDiv.textContent = 'Looking up constituency…';
-        sendWidgetHeight();
-
+        resultDiv.textContent = 'Looking up constituency…'; sendWidgetHeight();
         try {
           const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
           const data = await res.json();
-
           if (!data.result || data.result.country !== 'Wales') {
             resultDiv.textContent = 'Sorry, this tool only supports Welsh postcodes.';
             sendWidgetHeight();
             return;
           }
-
           const { longitude, latitude } = data.result;
           await lookupByCoords(longitude, latitude);
         } catch {
@@ -407,26 +368,13 @@
       });
 
       locationBtn.addEventListener('click', () => {
-        if (!navigator.geolocation) {
-          resultDiv.textContent = 'Geolocation not supported.';
-          sendWidgetHeight();
-          return;
-        }
+        if (!navigator.geolocation) { resultDiv.textContent = 'Geolocation not supported.'; sendWidgetHeight(); return; }
 
         navigator.geolocation.getCurrentPosition(async pos => {
           try {
-            const res = await fetch(
-              `https://api.postcodes.io/postcodes?lon=${pos.coords.longitude}&lat=${pos.coords.latitude}`
-            );
-
+            const res = await fetch(`https://api.postcodes.io/postcodes?lon=${pos.coords.longitude}&lat=${pos.coords.latitude}`);
             const postcode = res.ok ? (await res.json()).result[0].postcode : null;
-
-            if (!postcode) {
-              resultDiv.textContent = 'Could not determine postcode.';
-              sendWidgetHeight();
-              return;
-            }
-
+            if (!postcode) { resultDiv.textContent = 'Could not determine postcode.'; sendWidgetHeight(); return; }
             document.getElementById('postcode').value = postcode;
             await lookupByPostcode(postcode);
           } catch {
@@ -439,12 +387,9 @@
         });
       });
 
-      // Keyboard support for the location "button" SVG
+      // Keyboard support for the SVG button (safe addition)
       locationBtn.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          locationBtn.click();
-        }
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); locationBtn.click(); }
       });
     })();
   </script>
