@@ -218,6 +218,77 @@
     padding: 6px 10px;
   }
 }
+
+    .faq-container {
+  width: 100%;
+  max-width: 700px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.faq-summary {
+  font-size: 1.75rem;
+  font-weight: 700;
+  padding: 1rem;
+  background-color: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.faq-summary:hover {
+  background-color: #efefef;
+}
+
+.faq-container[open] .faq-summary {
+  background-color: #fff;
+  border-color: #F54927;
+  color: #F54927;
+}
+
+body.dark .faq-summary {
+  background-color: #2a2a2a;
+  border-color: #333;
+  color: #e0e0e0;
+}
+
+body.dark .faq-summary:hover {
+  background-color: #333;
+}
+
+body.dark .faq-container[open] .faq-summary {
+  background-color: #1e1e1e;
+  border-color: #F54927;
+  color: #F54927;
+}
+
+.faq-section {
+  margin-top: 0;
+  padding: 1rem;
+  background-color: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+}
+
+body.dark .faq-section {
+  background-color: #252525;
+  border-color: #333;
+}
+
+@media (max-width: 600px) {
+  .faq-summary {
+    font-size: 1.25rem;
+    padding: 0.875rem;
+  }
+  .faq-section {
+    padding: 0.875rem;
+  }
+}
   </style>
 </head>
 
@@ -258,6 +329,94 @@
   </div>
 
   <div id="map-tooltip"></div>
+
+    </div>
+
+  <div id="map-tooltip"></div>
+
+  <details class="faq-container">
+    <summary class="faq-summary">Frequently Asked Questions</summary>
+    
+    <div class="faq-section">
+      <div class="faq-item">
+        <button class="faq-question" aria-expanded="false" aria-controls="faq-1">
+          <span>When is the 2026 Welsh election?</span>
+          <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div id="faq-1" class="faq-answer" hidden>
+          <p>The Senedd election will be held on 7 May 2026.</p>
+        </div>
+      </div>
+
+      <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "When is the 2026 Welsh election?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The Senedd election will be held on 7 May 2026."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How many constituencies are there now?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Wales now has 16 constituencies (down from 40). Each constituency elects 6 Members, making 96 Members total."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How many Members will the Senedd have?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The Senedd will have 96 Members from the 2026 election (up from 60)."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How has the voting system changed?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "You now get one vote to choose a political party or independent candidate, rather than two separate ballots. Seats reflect the percentage of votes each party receives (closed proportional list system)."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can candidates from anywhere stand in 2026?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, anyone standing for election must live in Wales."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Are Senedd constituencies the same as Westminster constituencies?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, Senedd constituencies are different. The new Senedd constituencies were created by pairing the 32 UK Parliament constituencies for Wales."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How often will elections happen now?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "From 2026, Senedd elections will happen every four years (instead of every five years)."
+      }
+    }
+  ]
+}
+</script>
+
+    </div>
+  </details>
 
   <script>
     // Dark/light toggle
