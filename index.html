@@ -369,6 +369,8 @@
 
     .faq-detail {
       all: unset;
+      display: block;
+      width: 100%;
     }
 
     .faq-question {
@@ -385,6 +387,7 @@
       color: #000;
       text-align: left;
       transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+      box-sizing: border-box;
     }
 
     .faq-question:hover {
@@ -415,8 +418,10 @@
     }
 
     .faq-answer {
+      display: block;
+      width: 100%;
       padding: 0.875rem;
-      margin: 0;
+      margin: 0 !important;
       background-color: #fafafa;
       border: 1px solid #e0e0e0;
       border-top: none;
@@ -424,6 +429,7 @@
       color: #333;
       line-height: 1.5;
       font-size: 0.9rem;
+      box-sizing: border-box;
     }
 
     body.dark .faq-answer {
