@@ -454,6 +454,30 @@
     }
 
     body.dark div[style*="text-align: center"] { color: #e0e0e0; }
+
+    .share-btn {
+      padding: 0.5rem 1rem;
+      background-color: #F54927;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background-color 0.3s;
+      display: inline-block;
+    }
+
+    .share-btn:hover {
+      background-color: #F87C63;
+    }
+
+    body.dark .share-btn {
+      background-color: #F54927;
+    }
+
+    body.dark .share-btn:hover {
+      background-color: #F87C63;
+    }
   </style>
 </head>
 
@@ -547,9 +571,9 @@
   <div style="width: 100%; max-width: 700px; margin: 2rem auto; padding: 0 2rem; box-sizing: border-box; text-align: center;">
     <p style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;">Found this useful? Share it with others in Wales.</p>
     <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-      <a href="https://www.facebook.com/sharer/sharer.php?u=https://senedd2026.co.uk/" target="_blank" rel="noopener noreferrer" style="padding: 0.5rem 1rem; background-color: #F54927; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 0.9rem;">Share on Facebook</a>
-      <a href="https://twitter.com/intent/tweet?url=https://senedd2026.co.uk/&text=Find%20your%202026%20Senedd%20constituency" target="_blank" rel="noopener noreferrer" style="padding: 0.5rem 1rem; background-color: #F54927; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 0.9rem;">Share on X</a>
-      <a href="https://www.linkedin.com/sharing/share-offsite/?url=https://senedd2026.co.uk/" target="_blank" rel="noopener noreferrer" style="padding: 0.5rem 1rem; background-color: #F54927; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 0.9rem;">Share on LinkedIn</a>
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://senedd2026.co.uk/" target="_blank" rel="noopener noreferrer" class="share-btn">Share on Facebook</a>
+      <a href="https://twitter.com/intent/tweet?url=https://senedd2026.co.uk/&text=Find%20your%202026%20Senedd%20constituency" target="_blank" rel="noopener noreferrer" class="share-btn">Share on X</a>
+      <a href="https://www.linkedin.com/sharing/share-offsite/?url=https://senedd2026.co.uk/" target="_blank" rel="noopener noreferrer" class="share-btn">Share on LinkedIn</a>
     </div>
   </div>
 
