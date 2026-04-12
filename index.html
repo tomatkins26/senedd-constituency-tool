@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,7 +22,7 @@
   <link rel="manifest" href="site.webmanifest">
   
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap">
-  <script src="https://unpkg.com/@turf/turf@6/turf.min.js" defer></script>
+  <script src="https://unpkg.com/@turf/turf@6/turf.min.js" defer async></script>
 
   <script type="application/ld+json">
   {
@@ -38,6 +40,81 @@
       "Senedd boundaries",
       "Welsh elections",
       "Wales election 2026"
+    ],
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://senedd2026.co.uk?postcode={postcode}"
+      },
+      "query-input": "required name=postcode"
+    }
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "When is the 2026 Welsh election?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The Senedd election will be held on 7 May 2026."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How many constituencies are there now?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Wales now has 16 constituencies (down from 40). Each constituency elects 6 Members, making 96 Members total."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How many Members will the Senedd have?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The Senedd will have 96 Members from the 2026 election (up from 60)."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How has the voting system changed?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "You now get one vote to choose a political party or independent candidate, rather than two separate ballots. Seats reflect the percentage of votes each party receives (closed proportional list system)."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can candidates from anywhere stand in 2026?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No, anyone standing for election must live in Wales."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Are Senedd constituencies the same as Westminster constituencies?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No, Senedd constituencies are different. The new Senedd constituencies were created by pairing the 32 UK Parliament constituencies for Wales."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How often will elections happen now?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "From 2026, Senedd elections will happen every four years (instead of every five years)."
+        }
+      }
+    ]
+  }
   </script>
 
   <style>
@@ -63,7 +140,7 @@
 
     * { border-radius: 8px; }
 
-    .container {
+    main {
       width: 100%;
       max-width: 700px;
       padding: 0rem 2rem 2rem 2rem;
@@ -80,7 +157,6 @@
     label { display: block; font-weight: 600; margin-bottom: 0.25rem; }
     .postcode-container { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 
-    /* CHANGE 1: Input font now matches site font */
     input[type="text"] {
       flex: 1;
       min-width: 150px;
@@ -169,7 +245,7 @@
       background-color: #121212;
       color: #e0e0e0;
     }
-    body.dark .container {
+    body.dark main {
       background-color: #1e1e1e;
       color: #e0e0e0;
     }
@@ -178,7 +254,7 @@
     body.dark #result { color: #e0e0e0; }
     body.dark .data-source { color: #aaa; }
     body.dark #map-tooltip { border-color: #F54927; }
-    body.dark p.intro { color: #e0e0e0; }
+    body.dark p.intro { color: #ffffff; }
 
     @media (max-width: 480px) {
       h2 { font-size: 1.5rem; }
@@ -186,109 +262,173 @@
       button[type="submit"] { padding: 0.8rem 1rem; }
     }
     @media (max-width: 600px) {
-  .toggle-mode {
-    display: none;
-  }
-  .container {
-    padding: 1rem;
-    box-shadow: none; /* cleaner on mobile */
-  }
-  * {
-    border-radius: 4px;
-  }
-  h2 {
-    font-size: 1.4rem;
-  }
-  input[type="text"] {
-    padding: 0.8rem;
-    font-size: 1rem;
-  }
-  button[type="submit"] {
-    padding: 1rem;
-    font-size: 1rem;
-  }
-  .postcode-container {
-    gap: 0.75rem;
-  }
-  label {
-    margin-bottom: 0.4rem;
-  }
-  #map-tooltip {
-    font-size: 0.85rem;
-    padding: 6px 10px;
-  }
-}
+      .toggle-mode {
+        display: none;
+      }
+      main {
+        padding: 1rem;
+        box-shadow: none;
+      }
+      * {
+        border-radius: 4px;
+      }
+      h2 {
+        font-size: 1.4rem;
+      }
+      input[type="text"] {
+        padding: 0.8rem;
+        font-size: 1rem;
+      }
+      button[type="submit"] {
+        padding: 1rem;
+        font-size: 1rem;
+      }
+      .postcode-container {
+        gap: 0.75rem;
+      }
+      label {
+        margin-bottom: 0.4rem;
+      }
+      #map-tooltip {
+        font-size: 0.85rem;
+        padding: 6px 10px;
+      }
+    }
 
     .faq-container {
-  width: 100%;
-  max-width: 700px;
-  margin: 2rem auto;
-  padding: 0 1rem;
-}
+      width: 100%;
+      max-width: 700px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
 
-.faq-summary {
-  font-size: 1.75rem;
-  font-weight: 700;
-  padding: 1rem;
-  background-color: #f5f5f5;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  cursor: pointer;
-  user-select: none;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+    .faq-summary {
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 0.75rem 1rem;
+      background-color: #f5f5f5;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
 
-.faq-summary:hover {
-  background-color: #efefef;
-}
+    .faq-summary:hover {
+      background-color: #efefef;
+    }
 
-.faq-container[open] .faq-summary {
-  background-color: #fff;
-  border-color: #F54927;
-  color: #F54927;
-}
+    .faq-container[open] .faq-summary {
+      background-color: #fff;
+      border-color: #F54927;
+      color: #F54927;
+    }
 
-body.dark .faq-summary {
-  background-color: #2a2a2a;
-  border-color: #333;
-  color: #e0e0e0;
-}
+    body.dark .faq-summary {
+      background-color: #2a2a2a;
+      border-color: #333;
+      color: #e0e0e0;
+    }
 
-body.dark .faq-summary:hover {
-  background-color: #333;
-}
+    body.dark .faq-summary:hover {
+      background-color: #333;
+    }
 
-body.dark .faq-container[open] .faq-summary {
-  background-color: #1e1e1e;
-  border-color: #F54927;
-  color: #F54927;
-}
+    body.dark .faq-container[open] .faq-summary {
+      background-color: #1e1e1e;
+      border-color: #F54927;
+      color: #F54927;
+    }
 
-.faq-section {
-  margin-top: 0;
-  padding: 1rem;
-  background-color: #fafafa;
-  border: 1px solid #e0e0e0;
-  border-top: none;
-  border-radius: 0 0 8px 8px;
-}
+    .faq-section {
+      margin-top: 0.5rem;
+      padding: 0;
+      background-color: transparent;
+      border: none;
+    }
 
-body.dark .faq-section {
-  background-color: #252525;
-  border-color: #333;
-}
+    .faq-item {
+      margin-bottom: 0.5rem;
+    }
 
-@media (max-width: 600px) {
-  .faq-summary {
-    font-size: 1.25rem;
-    padding: 0.875rem;
-  }
-  .faq-section {
-    padding: 0.875rem;
-  }
-}
+    .faq-detail {
+      all: unset;
+    }
+
+    .faq-question {
+      display: block;
+      width: 100%;
+      padding: 0.6rem 0.875rem;
+      background-color: #f5f5f5;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Rubik', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #000;
+      text-align: left;
+      transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    }
+
+    .faq-question:hover {
+      background-color: #efefef;
+    }
+
+    .faq-detail[open] .faq-question {
+      background-color: #fff;
+      border-color: #F54927;
+      color: #F54927;
+      border-radius: 6px 6px 0 0;
+    }
+
+    body.dark .faq-question {
+      background-color: #2a2a2a;
+      border-color: #333;
+      color: #e0e0e0;
+    }
+
+    body.dark .faq-question:hover {
+      background-color: #333;
+    }
+
+    body.dark .faq-detail[open] .faq-question {
+      background-color: #1e1e1e;
+      border-color: #F54927;
+      color: #F54927;
+    }
+
+    .faq-answer {
+      padding: 0.875rem;
+      margin: 0;
+      background-color: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-top: none;
+      border-radius: 0 0 6px 6px;
+      color: #333;
+      line-height: 1.5;
+      font-size: 0.9rem;
+    }
+
+    body.dark .faq-answer {
+      background-color: #252525;
+      border-color: #333;
+      color: #e0e0e0;
+    }
+
+    @media (max-width: 600px) {
+      .faq-summary {
+        font-size: 0.95rem;
+        padding: 0.625rem 0.875rem;
+      }
+      .faq-question {
+        font-size: 0.85rem;
+        padding: 0.5rem 0.75rem;
+      }
+      .faq-answer {
+        font-size: 0.85rem;
+        padding: 0.75rem;
+      }
+    }
   </style>
 </head>
 
@@ -301,7 +441,7 @@ body.dark .faq-section {
     </p>
   </noscript>
 
-  <div class="container">
+  <main>
     <h2>Find Your 2026 Senedd Constituency</h2>
     <p class="intro">
       Enter your postcode to find out which of the new 2026 Senedd constituencies you live in. This lookup uses official Welsh boundary data.
@@ -326,15 +466,11 @@ body.dark .faq-section {
     <div class="data-source">
       Data from Senedd Cymru/Welsh Parliament • Your data is used temporarily for this search and is not recorded.
     </div>
-  </div>
+  </main>
 
   <div id="map-tooltip"></div>
 
-    </div>
-
-  <div id="map-tooltip"></div>
-
- <details class="faq-container">
+  <details class="faq-container">
     <summary class="faq-summary">Frequently Asked Questions</summary>
     
     <div class="faq-section">
@@ -344,42 +480,36 @@ body.dark .faq-section {
           <p class="faq-answer">The Senedd election will be held on 7 May 2026.</p>
         </details>
       </div>
-
       <div class="faq-item">
         <details class="faq-detail">
           <summary class="faq-question">How many constituencies are there now?</summary>
           <p class="faq-answer">Wales now has 16 constituencies (down from 40). Each constituency elects 6 Members, making 96 Members total.</p>
         </details>
       </div>
-
       <div class="faq-item">
         <details class="faq-detail">
           <summary class="faq-question">How many Members will the Senedd have?</summary>
           <p class="faq-answer">The Senedd will have 96 Members from the 2026 election (up from 60).</p>
         </details>
       </div>
-
       <div class="faq-item">
         <details class="faq-detail">
           <summary class="faq-question">How has the voting system changed?</summary>
           <p class="faq-answer">You now get one vote to choose a political party or independent candidate, rather than two separate ballots. Seats reflect the percentage of votes each party receives (closed proportional list system).</p>
         </details>
       </div>
-
       <div class="faq-item">
         <details class="faq-detail">
           <summary class="faq-question">Can candidates from anywhere stand in 2026?</summary>
           <p class="faq-answer">No, anyone standing for election must live in Wales.</p>
         </details>
       </div>
-
       <div class="faq-item">
         <details class="faq-detail">
           <summary class="faq-question">Are Senedd constituencies the same as Westminster constituencies?</summary>
           <p class="faq-answer">No, Senedd constituencies are different. The new Senedd constituencies were created by pairing the 32 UK Parliament constituencies for Wales.</p>
         </details>
       </div>
-
       <div class="faq-item">
         <details class="faq-detail">
           <summary class="faq-question">How often will elections happen now?</summary>
@@ -388,85 +518,6 @@ body.dark .faq-section {
       </div>
     </div>
   </details>
-
-  <style>
-    .faq-item {
-      margin-bottom: 0.5rem;
-    }
-
-    .faq-detail {
-      all: unset;
-    }
-
-    .faq-question {
-      display: block;
-      width: 100%;
-      padding: 0.875rem 1rem;
-      background-color: #f5f5f5;
-      border: 1px solid #e0e0e0;
-      border-radius: 6px;
-      cursor: pointer;
-      font-family: 'Rubik', sans-serif;
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #000;
-      text-align: left;
-      transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-    }
-
-    .faq-question:hover {
-      background-color: #efefef;
-    }
-
-    .faq-detail[open] .faq-question {
-      background-color: #fff;
-      border-color: #F54927;
-      color: #F54927;
-    }
-
-    body.dark .faq-question {
-      background-color: #2a2a2a;
-      border-color: #333;
-      color: #e0e0e0;
-    }
-
-    body.dark .faq-question:hover {
-      background-color: #333;
-    }
-
-    body.dark .faq-detail[open] .faq-question {
-      background-color: #1e1e1e;
-      border-color: #F54927;
-      color: #F54927;
-    }
-
-    .faq-answer {
-      padding: 1rem;
-      margin: 0;
-      background-color: #fafafa;
-      border: 1px solid #e0e0e0;
-      border-top: none;
-      border-radius: 0 0 6px 6px;
-      color: #333;
-      line-height: 1.6;
-    }
-
-    body.dark .faq-answer {
-      background-color: #252525;
-      border-color: #333;
-      color: #e0e0e0;
-    }
-
-    @media (max-width: 600px) {
-      .faq-question {
-        font-size: 0.9rem;
-        padding: 0.75rem;
-      }
-      .faq-answer {
-        padding: 0.75rem;
-      }
-    }
-  </style>
 
   <script>
     // Dark/light toggle
