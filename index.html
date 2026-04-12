@@ -497,6 +497,45 @@
         font-size: 0.8rem;
       }
     }
+
+    .share-section {
+      width: 100%;
+      max-width: 700px;
+      margin: 2rem auto 5.5rem;
+      padding: 0 2rem;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    .share-section > div {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 600px) {
+      .share-section {
+        margin: 2rem auto 5.5rem;
+        padding: 0 1.5rem;
+      }
+      .share-section > div {
+        gap: 0.75rem;
+      }
+    }
+
+    @media (max-width: 375px) {
+      .share-section {
+        padding: 0 1rem;
+      }
+      .share-section > div {
+        gap: 0.5rem;
+      }
+      .share-btn {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.8rem;
+      }
+    }
   </style>
 </head>
 
@@ -587,7 +626,7 @@
     </div>
   </details>
 
-  <div id="share-section" style="width: 100%; max-width: 700px; margin: 2rem auto 5.5rem; padding: 0 2rem; box-sizing: border-box; text-align: center; display: none;">
+  <div id="share-section" class="share-section" style="display: none;">
     <p style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;">Found this useful? Share it with others in Wales.</p>
     <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
       <a id="share-facebook" href="#" target="_blank" rel="noopener noreferrer" class="share-btn">Share on Facebook</a>
