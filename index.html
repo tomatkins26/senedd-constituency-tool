@@ -309,6 +309,10 @@
         font-size: 0.85rem;
         padding: 6px 10px;
       }
+      #location-btn {
+        width: 40px;
+        height: 40px;
+      }
     }
 
     .faq-container {
@@ -446,11 +450,11 @@
         padding: 0.625rem 0.875rem;
       }
       .faq-question {
-        font-size: 0.85rem;
+        font-size: 0.9rem;
         padding: 0.5rem 0.75rem;
       }
       .faq-answer {
-        font-size: 0.85rem;
+        font-size: 0.95rem;
         padding: 0.75rem;
       }
     }
@@ -480,6 +484,19 @@
     body.dark .share-btn:hover {
       background-color: #F87C63;
     }
+
+    @media (max-width: 375px) {
+      #share-section {
+        padding: 0 1rem !important;
+      }
+      #share-section > div {
+        gap: 0.5rem !important;
+      }
+      .share-btn {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.8rem;
+      }
+    }
   </style>
 </head>
 
@@ -501,7 +518,7 @@
     <form id="lookup-form">
       <label for="postcode">Enter your postcode:</label>
       <div class="postcode-container">
-        <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required autocomplete="postal-code" />
+        <input type="text" id="postcode" placeholder="e.g. CF99 1SN" required autocomplete="postal-code" inputmode="text" />
         <svg id="location-btn" role="button" tabindex="0" aria-label="Find my current location" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="8" fill="none" />
           <circle cx="12" cy="12" r="4" />
@@ -570,7 +587,7 @@
     </div>
   </details>
 
-  <div id="share-section" style="width: 100%; max-width: 700px; margin: 2rem auto 4rem; padding: 0 2rem; box-sizing: border-box; text-align: center; display: none;">
+  <div id="share-section" style="width: 100%; max-width: 700px; margin: 2rem auto 5.5rem; padding: 0 2rem; box-sizing: border-box; text-align: center; display: none;">
     <p style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;">Found this useful? Share it with others in Wales.</p>
     <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
       <a id="share-facebook" href="#" target="_blank" rel="noopener noreferrer" class="share-btn">Share on Facebook</a>
