@@ -610,13 +610,17 @@
                     tooltip.style.color = groupId === matchedConstituencyId ? '#fff' : '#F54927';
                     tooltip.style.borderColor = groupId === matchedConstituencyId ? '#F87C63' : '#F54927';
                     tooltip.style.display = 'block';
+                    shape.style.opacity = '0.85';
                   }
                 });
                 shape.addEventListener('mousemove', e => {
                   tooltip.style.left = `${e.pageX}px`;
                   tooltip.style.top = `${e.pageY - 16}px`;
                 });
-                shape.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+                shape.addEventListener('mouseleave', () => { 
+                  tooltip.style.display = 'none';
+                  shape.style.opacity = '1';
+                });
               });
             });
             const matchElement = svgElement.querySelector(`#${matchedConstituencyId}`);
