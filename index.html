@@ -334,89 +334,139 @@ body.dark .faq-section {
 
   <div id="map-tooltip"></div>
 
-  <details class="faq-container">
+ <details class="faq-container">
     <summary class="faq-summary">Frequently Asked Questions</summary>
     
     <div class="faq-section">
       <div class="faq-item">
-        <button class="faq-question" aria-expanded="false" aria-controls="faq-1">
-          <span>When is the 2026 Welsh election?</span>
-          <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </button>
-        <div id="faq-1" class="faq-answer" hidden>
-          <p>The Senedd election will be held on 7 May 2026.</p>
-        </div>
+        <details class="faq-detail">
+          <summary class="faq-question">When is the 2026 Welsh election?</summary>
+          <p class="faq-answer">The Senedd election will be held on 7 May 2026.</p>
+        </details>
       </div>
 
-      <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    {
-      "@type": "Question",
-      "name": "When is the 2026 Welsh election?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "The Senedd election will be held on 7 May 2026."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "How many constituencies are there now?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Wales now has 16 constituencies (down from 40). Each constituency elects 6 Members, making 96 Members total."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "How many Members will the Senedd have?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "The Senedd will have 96 Members from the 2026 election (up from 60)."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "How has the voting system changed?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "You now get one vote to choose a political party or independent candidate, rather than two separate ballots. Seats reflect the percentage of votes each party receives (closed proportional list system)."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Can candidates from anywhere stand in 2026?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "No, anyone standing for election must live in Wales."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Are Senedd constituencies the same as Westminster constituencies?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "No, Senedd constituencies are different. The new Senedd constituencies were created by pairing the 32 UK Parliament constituencies for Wales."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "How often will elections happen now?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "From 2026, Senedd elections will happen every four years (instead of every five years)."
-      }
-    }
-  ]
-}
-</script>
+      <div class="faq-item">
+        <details class="faq-detail">
+          <summary class="faq-question">How many constituencies are there now?</summary>
+          <p class="faq-answer">Wales now has 16 constituencies (down from 40). Each constituency elects 6 Members, making 96 Members total.</p>
+        </details>
+      </div>
 
+      <div class="faq-item">
+        <details class="faq-detail">
+          <summary class="faq-question">How many Members will the Senedd have?</summary>
+          <p class="faq-answer">The Senedd will have 96 Members from the 2026 election (up from 60).</p>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details class="faq-detail">
+          <summary class="faq-question">How has the voting system changed?</summary>
+          <p class="faq-answer">You now get one vote to choose a political party or independent candidate, rather than two separate ballots. Seats reflect the percentage of votes each party receives (closed proportional list system).</p>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details class="faq-detail">
+          <summary class="faq-question">Can candidates from anywhere stand in 2026?</summary>
+          <p class="faq-answer">No, anyone standing for election must live in Wales.</p>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details class="faq-detail">
+          <summary class="faq-question">Are Senedd constituencies the same as Westminster constituencies?</summary>
+          <p class="faq-answer">No, Senedd constituencies are different. The new Senedd constituencies were created by pairing the 32 UK Parliament constituencies for Wales.</p>
+        </details>
+      </div>
+
+      <div class="faq-item">
+        <details class="faq-detail">
+          <summary class="faq-question">How often will elections happen now?</summary>
+          <p class="faq-answer">From 2026, Senedd elections will happen every four years (instead of every five years).</p>
+        </details>
+      </div>
     </div>
   </details>
+
+  <style>
+    .faq-item {
+      margin-bottom: 0.5rem;
+    }
+
+    .faq-detail {
+      all: unset;
+    }
+
+    .faq-question {
+      display: block;
+      width: 100%;
+      padding: 0.875rem 1rem;
+      background-color: #f5f5f5;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Rubik', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #000;
+      text-align: left;
+      transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    }
+
+    .faq-question:hover {
+      background-color: #efefef;
+    }
+
+    .faq-detail[open] .faq-question {
+      background-color: #fff;
+      border-color: #F54927;
+      color: #F54927;
+    }
+
+    body.dark .faq-question {
+      background-color: #2a2a2a;
+      border-color: #333;
+      color: #e0e0e0;
+    }
+
+    body.dark .faq-question:hover {
+      background-color: #333;
+    }
+
+    body.dark .faq-detail[open] .faq-question {
+      background-color: #1e1e1e;
+      border-color: #F54927;
+      color: #F54927;
+    }
+
+    .faq-answer {
+      padding: 1rem;
+      margin: 0;
+      background-color: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-top: none;
+      border-radius: 0 0 6px 6px;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    body.dark .faq-answer {
+      background-color: #252525;
+      border-color: #333;
+      color: #e0e0e0;
+    }
+
+    @media (max-width: 600px) {
+      .faq-question {
+        font-size: 0.9rem;
+        padding: 0.75rem;
+      }
+      .faq-answer {
+        padding: 0.75rem;
+      }
+    }
+  </style>
 
   <script>
     // Dark/light toggle
