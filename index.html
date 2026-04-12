@@ -705,6 +705,9 @@
         document.getElementById('share-linkedin').href = linkedinUrl;
         document.getElementById('share-section').style.display = 'block';
 
+        // Close the FAQ section
+        document.querySelector('.faq-container').removeAttribute('open');
+
         svgContainer.innerHTML = '';
 
         try {
